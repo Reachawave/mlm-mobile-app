@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // for date formatting
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
+import 'CommisionPayoutPage.dart';
+import 'ManageAgentsPage.dart';
 import 'TotalRevenuePage.dart';
+import 'TotalVenturesPage.dart';
 
 class Dashboardpage extends StatelessWidget {
   const Dashboardpage({super.key});
@@ -495,85 +498,95 @@ class _DashboardBodyState extends State<DashboardBody> {
                       ),
                     ),
                     SizedBox(width: 10),
-                    Container(
-                      height: 200,
-                      width: 175,
-                      child: Card(
-                        color: Color(0xFFD92C54),
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                height: 40,
-                                child: Image.asset(
-                                  'lib/icons/coins.png',
-                                  color: Colors.white,
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CommisionPayoutPage(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        height: 200,
+                        width: 175,
+                        child: Card(
+                          color: Color(0xFFD92C54),
+                          elevation: 5,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  height: 40,
+                                  child: Image.asset(
+                                    'lib/icons/coins.png',
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                "COMMISSION PAID", // 👈 text comes from list
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
+                                SizedBox(height: 8),
+                                Text(
+                                  "COMMISSION PAID", // 👈 text comes from list
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: FittedBox(
-                                      fit: BoxFit
-                                          .scaleDown, // scales both icon + text
-                                      alignment: Alignment.centerLeft,
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.currency_rupee_outlined,
-                                            size: 30, // 👈 base size
-                                            color: Colors.white,
-                                          ),
-                                          Text(
-                                            "1,91,000",
-                                            style: TextStyle(
+                                SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: FittedBox(
+                                        fit: BoxFit
+                                            .scaleDown, // scales both icon + text
+                                        alignment: Alignment.centerLeft,
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.currency_rupee_outlined,
+                                              size: 30, // 👈 base size
                                               color: Colors.white,
-                                              fontSize: 30, // 👈 base size
-                                              fontWeight: FontWeight.bold,
                                             ),
-                                          ),
-                                        ],
+                                            Text(
+                                              "1,91,000",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 30, // 👈 base size
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Paid to agent", // 👈 text comes from list
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Paid to agent", // 👈 text comes from list
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    "network", // 👈 text comes from list
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
+                                    Text(
+                                      "network", // 👈 text comes from list
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -583,135 +596,148 @@ class _DashboardBodyState extends State<DashboardBody> {
                 SizedBox(height: 10.0),
                 Row(
                   children: [
-                    Container(
-                      height: 200,
-                      width: 175,
-                      child: Card(
-                        color: Color(0xFF3D74B6),
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                height: 40,
-                                child: Image.asset(
-                                  'lib/icons/text.png',
-                                  color: Colors.white,
+                    InkWell(
+                      onTap: () {},
+                      child: Container(
+                        height: 200,
+                        width: 175,
+                        child: Card(
+                          color: Color(0xFF3D74B6),
+                          elevation: 5,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  height: 40,
+                                  child: Image.asset(
+                                    'lib/icons/text.png',
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                "TOTAL REVENUE", // 👈 text comes from list
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
+                                SizedBox(height: 8),
+                                Text(
+                                  "NET WORTH", // 👈 text comes from list
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: FittedBox(
-                                      fit: BoxFit
-                                          .scaleDown, // scales both icon + text
-                                      alignment: Alignment.centerLeft,
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.currency_rupee_outlined,
-                                            size: 30, // 👈 base size
-                                            color: Colors.white,
-                                          ),
-                                          Text(
-                                            "15,00,000",
-                                            style: TextStyle(
+                                SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: FittedBox(
+                                        fit: BoxFit
+                                            .scaleDown, // scales both icon + text
+                                        alignment: Alignment.centerLeft,
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.currency_rupee_outlined,
+                                              size: 30, // 👈 base size
                                               color: Colors.white,
-                                              fontSize: 30, // 👈 base size
-                                              fontWeight: FontWeight.bold,
                                             ),
-                                          ),
-                                        ],
+                                            Text(
+                                              "15,00,000",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 30, // 👈 base size
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Revenue -", // 👈 text comes from list
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Revenue -", // 👈 text comes from list
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    "Commissions", // 👈 text comes from list
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
+                                    Text(
+                                      "Commissions", // 👈 text comes from list
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
                     SizedBox(width: 10),
-                    Container(
-                      height: 200,
-                      width: 175,
-                      child: Card(
-                        color: Color(0xFFB13BFF),
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.people_outlined,
-                                size: 40,
-                                color: Colors.white,
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                "TOTAL AGENTS", // 👈 text comes from list
-                                style: TextStyle(
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ManageAgentPage(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        height: 200,
+                        width: 175,
+                        child: Card(
+                          color: Color(0xFFB13BFF),
+                          elevation: 5,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.people_outlined,
+                                  size: 40,
                                   color: Colors.white,
-                                  fontSize: 16,
                                 ),
-                              ),
-                              SizedBox(height: 20),
-                              Text(
-                                "34", // 👈 text comes from list
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 30,
-                                  fontWeight: FontWeight.bold,
+                                SizedBox(height: 8),
+                                Text(
+                                  "TOTAL AGENTS", // 👈 text comes from list
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                "All registered agents", // 👈 text comes from list
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
+                                SizedBox(height: 20),
+                                Text(
+                                  "34", // 👈 text comes from list
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                            ],
+                                Text(
+                                  "All registered agents", // 👈 text comes from list
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -721,53 +747,63 @@ class _DashboardBodyState extends State<DashboardBody> {
                 SizedBox(height: 10.0),
                 Row(
                   children: [
-                    Container(
-                      height: 200,
-                      width: 175,
-                      child: Card(
-                        color: Color(0xFFD92C54),
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                height: 40,
-                                child: Image.asset(
-                                  'lib/icons/bag.png',
-                                  color: Colors.white,
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TotalVenturesPage(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        height: 200,
+                        width: 175,
+                        child: Card(
+                          color: Color(0xFFD92C54),
+                          elevation: 5,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  height: 40,
+                                  child: Image.asset(
+                                    'lib/icons/bag.png',
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                "TOTAL VENTURES", // 👈 text comes from list
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
+                                SizedBox(height: 8),
+                                Text(
+                                  "TOTAL VENTURES", // 👈 text comes from list
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 30),
-                              Text(
-                                "4", // 👈 text comes from list
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 30,
-                                  fontWeight: FontWeight.bold,
+                                SizedBox(height: 30),
+                                Text(
+                                  "4", // 👈 text comes from list
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                "Ready for investment", // 👈 text comes from list
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
+                                Text(
+                                  "Ready for investment", // 👈 text comes from list
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),

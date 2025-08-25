@@ -1,24 +1,32 @@
 import 'package:flutter/material.dart';
 
-class TotalRevenuePage extends StatelessWidget {
-  const TotalRevenuePage({super.key});
+class TotalVenturesPage extends StatelessWidget {
+  const TotalVenturesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: TotalRevenueBody());
+    return Scaffold(body: TotalVenturesBody());
   }
 }
 
-class TotalRevenueBody extends StatefulWidget {
-  const TotalRevenueBody({super.key});
+class TotalVenturesBody extends StatefulWidget {
+  const TotalVenturesBody({super.key});
 
   @override
-  State<TotalRevenueBody> createState() => _TotalRevenueBodyState();
+  State<TotalVenturesBody> createState() => _TotalVenturesBodyState();
 }
 
-class _TotalRevenueBodyState extends State<TotalRevenueBody> {
+class _TotalVenturesBodyState extends State<TotalVenturesBody> {
   @override
   Widget build(BuildContext context) {
+    final List<Map<String, String>> data = [
+      {
+        "name": "Chinnala Tyuh5 acres ramannapet venture",
+        "location": "kanyakumari",
+      },
+      {"name": "Sunitha 5 acres ramannapet venture", "location": "kondagattu"},
+      {"name": "Ravi Kumar-4,hnk,chinnapendyala", "location": "vemulawada"},
+    ];
     return Scaffold(
       drawerEnableOpenDragGesture: false,
       drawer: Drawer(
@@ -175,6 +183,7 @@ class _TotalRevenueBodyState extends State<TotalRevenueBody> {
         child: Padding(
           padding: EdgeInsets.all(16.0),
           child: Container(
+            width: double.infinity,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -200,10 +209,54 @@ class _TotalRevenueBodyState extends State<TotalRevenueBody> {
                     ),
                     SizedBox(width: 20.0),
                     Text(
-                      "All Investments",
+                      "Manage Ventures",
                       style: TextStyle(
                         fontSize: 24.0,
                         fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 6.0),
+                    InkWell(
+                      onTap: () {
+                        // showUserFormDialog(context);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white54,
+                          borderRadius: BorderRadius.circular(
+                            6,
+                          ), // rounded corners
+                          border: Border.all(
+                            color: Colors.green, // border color
+                            width: 0.5,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              height: 16,
+                              child: Image.asset(
+                                'lib/icons/add.png',
+                                color: Colors.black,
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 6,
+                            ), // spacing between icon and text
+                            Text(
+                              "Create Venture",
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -228,13 +281,13 @@ class _TotalRevenueBodyState extends State<TotalRevenueBody> {
                             Container(
                               height: 24.0,
                               child: Image.asset(
-                                "lib/icons/pig.png",
+                                "lib/icons/bag.png",
                                 color: Colors.green,
                               ),
                             ),
                             SizedBox(width: 10.0),
                             Text(
-                              "Recent Investments",
+                              "Ventures",
                               style: TextStyle(
                                 fontSize: 24.0,
                                 fontWeight: FontWeight.bold,
@@ -243,7 +296,7 @@ class _TotalRevenueBodyState extends State<TotalRevenueBody> {
                           ],
                         ),
                         Text(
-                          "A log of recent investment activities",
+                          "Monitor the progress of all ongoing ventures",
                           style: TextStyle(fontSize: 14.0, color: Colors.green),
                         ),
                         SizedBox(height: 30.0),
@@ -253,14 +306,14 @@ class _TotalRevenueBodyState extends State<TotalRevenueBody> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                "Agent",
+                                "Name & Location",
                                 style: TextStyle(
                                   fontSize: 16.0,
                                   color: Colors.green,
                                 ),
                               ),
                               Text(
-                                "Amount",
+                                "Availability",
                                 style: TextStyle(
                                   fontSize: 16.0,
                                   color: Colors.green,
@@ -270,74 +323,70 @@ class _TotalRevenueBodyState extends State<TotalRevenueBody> {
                           ),
                         ),
                         SizedBox(height: 3.0),
-                        Divider(thickness: 0.3, color: Colors.green),
                         ListView.builder(
-                          shrinkWrap: true, // ✅ let it size itself
-                          physics:
-                              const NeverScrollableScrollPhysics(), // ✅ avoid nested scroll
-                          itemCount: 10,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: data.length,
                           itemBuilder: (BuildContext context, int index) {
+                            final item = data[index];
+                            final name = item["name"] ?? '';
+                            final location = item["location"] ?? '';
+
                             return Column(
                               children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: const [
-                                          Text(
-                                            "p.sunitha",
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                          SizedBox(height: 2),
-                                          Text(
-                                            "svd-st-23",
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.green,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: const [
-                                          Visibility(
-                                            visible: false,
-                                            child: Text(
-                                              "p.sunitha",
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                color: Colors.black,
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(height: 8),
-                                          Text(
-                                            "50,000",
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
                                 const Divider(
                                   thickness: 0.3,
                                   color: Colors.green,
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(10.0),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // Name + ID
+                                      // Name + ID column (auto-wrap)
+                                      Expanded(
+                                        flex: 1,
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              name,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.black,
+                                              ),
+                                              softWrap: true,
+                                              overflow: TextOverflow.visible,
+                                              maxLines: null,
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              location,
+                                              style: const TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.green,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(width: 30),
+                                      Container(
+                                        width: 90, // full device width
+                                        height: 20,
+                                        decoration: BoxDecoration(
+                                          color: Colors
+                                              .green, // 👈 fill with green
+                                          borderRadius: BorderRadius.circular(
+                                            30,
+                                          ), // 👈 pill shape
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             );
