@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // for date formatting
+import 'package:myprojects/pages/ReportsPage.dart';
+import 'package:myprojects/pages/WithdrawalRequestPage.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'CommisionPayoutPage.dart';
 import 'ManageAgentsPage.dart';
+import 'ManageBranches.dart';
+import 'ReferrelPage.dart';
 import 'TotalRevenuePage.dart';
 import 'TotalVenturesPage.dart';
+import 'networkpage.dart';
 
 class Dashboardpage extends StatelessWidget {
   const Dashboardpage({super.key});
@@ -31,9 +36,13 @@ class _DashboardBodyState extends State<DashboardBody> {
   void _onSelectionChanged(DateRangePickerSelectionChangedArgs args) {
     if (args.value is PickerDateRange) {
       DateTime? start = args.value.startDate;
-      DateTime? end = args.value.endDate ?? start;
+      DateTime? endNullable = args.value.endDate ?? start;
 
-      if (start != null && end != null) {
+      if (start != null && endNullable != null) {
+        DateTime now = DateTime.now();
+        // Ensure end is not after today
+        DateTime end = endNullable.isAfter(now) ? now : endNullable;
+
         setState(() {
           if (start == end) {
             // single date
@@ -90,18 +99,13 @@ class _DashboardBodyState extends State<DashboardBody> {
                   view: DateRangePickerView.month,
                   minDate: DateTime(
                     now.year,
-                    now.month,
                     1,
-                  ), // first day of current month
-                  maxDate: DateTime(
-                    now.year,
-                    now.month + 1,
-                    0,
-                  ), // last day of current month
+                    1,
+                  ), // first day of year or desired min
+                  maxDate: now, // ✅ prevent selecting future dates
                   initialDisplayDate: now,
-                  showNavigationArrow: false, // disable next/prev arrows
-                  enablePastDates: false, // block past dates
-                  allowViewNavigation: false, // 🔒 prevents year/month picker
+                  showNavigationArrow: true, // allow moving across months
+                  allowViewNavigation: true, // allow year/month picker
                 ),
               ),
             ),
@@ -163,35 +167,121 @@ class _DashboardBodyState extends State<DashboardBody> {
               child: ListView(
                 children: [
                   DrawerMenuRow(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const Dashboardpage(),
+                        ),
+                      );
+                    },
                     imagePath: "lib/icons/home.png",
                     title: "Dashboard",
                   ),
-                  DrawerMenuRow(icon: Icons.people_outlined, title: "Agents"),
+
                   DrawerMenuRow(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ManageAgentPage(),
+                        ),
+                      );
+                    },
+                    icon: Icons.people_outlined,
+                    title: "Agents",
+                  ),
+                  DrawerMenuRow(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TotalVenturesPage(),
+                        ),
+                      );
+                    },
                     imagePath: "lib/icons/bag.png",
                     title: "Ventures",
                   ),
+
                   DrawerMenuRow(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ManageBranchesPage(),
+                        ),
+                      );
+                    },
                     imagePath: "lib/icons/git.png",
                     title: "Branches",
                   ),
                   DrawerMenuRow(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TotalRevenuePage(),
+                        ),
+                      );
+                    },
                     icon: Icons.account_balance_wallet_outlined,
                     title: "Investments",
                   ),
                   DrawerMenuRow(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CommisionPayoutPage(),
+                        ),
+                      );
+                    },
                     imagePath: "lib/icons/coins.png",
                     title: "Payouts",
                   ),
                   DrawerMenuRow(
+                    onTap: () {
+                      Navigator.pop(context);
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //     builder: (context) => const TotalRevenuePage(),
+                      //   ),
+                      // );
+                    },
                     imagePath: "lib/icons/decision-tree.png",
                     title: "Referral Tree",
                   ),
                   DrawerMenuRow(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const Withdrawalrequestpage(),
+                        ),
+                      );
+                    },
                     imagePath: "lib/icons/coins.png",
                     title: "Withdrawals",
                   ),
                   DrawerMenuRow(
+                    onTap: () {
+                      Navigator.pop(context);
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //     builder: (context) => const TotalRevenuePage(),
+                      //   ),
+                      // );
+                    },
                     imagePath: "lib/icons/charts.png",
                     title: "Reports",
                   ),
@@ -289,11 +379,11 @@ class _DashboardBodyState extends State<DashboardBody> {
                 Row(
                   children: [
                     Container(
+                      width: 50,
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: Colors.black12, // Sets the color of the border
                           width: 1.0, // Sets the width of the border
-                          // Sets the style of the border (e.g., solid, dashed, dotted)
                         ),
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(
@@ -302,7 +392,7 @@ class _DashboardBodyState extends State<DashboardBody> {
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: Text("Today", style: TextStyle(fontSize: 16.0)),
+                        child: Text("Today", style: TextStyle(fontSize: 10.0)),
                       ),
                     ),
                     SizedBox(width: 10.0),
@@ -348,6 +438,7 @@ class _DashboardBodyState extends State<DashboardBody> {
                         ),
                       ),
                     ),
+                    SizedBox(width: 10.0),
                   ],
                 ),
                 SizedBox(height: 10.0),
@@ -809,65 +900,75 @@ class _DashboardBodyState extends State<DashboardBody> {
                       ),
                     ),
                     SizedBox(width: 10),
-                    Container(
-                      height: 200,
-                      width: 175,
-                      child: Card(
-                        color: Color(0xFFFFD66B),
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                height: 40,
-                                child: Image.asset(
-                                  'lib/icons/bank.png',
-                                  color: Colors.white,
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                "TOTAL BRANCHES", // 👈 text comes from list
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                "2", // 👈 text comes from list
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 30,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Across the", // 👈 text comes from list
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                    ),
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ManageBranchesPage(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        height: 200,
+                        width: 175,
+                        child: Card(
+                          color: Color(0xFFFFD66B),
+                          elevation: 5,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  height: 40,
+                                  child: Image.asset(
+                                    'lib/icons/bank.png',
+                                    color: Colors.white,
                                   ),
-                                  Text(
-                                    "organization", // 👈 text comes from list
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                    ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  "TOTAL BRANCHES", // 👈 text comes from list
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
                                   ),
-                                ],
-                              ),
-                            ],
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  "2", // 👈 text comes from list
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Across the", // 👈 text comes from list
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    Text(
+                                      "organization", // 👈 text comes from list
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -877,165 +978,186 @@ class _DashboardBodyState extends State<DashboardBody> {
                 SizedBox(height: 10.0),
                 Row(
                   children: [
-                    Container(
-                      width: 175,
-                      child: Card(
-                        color: Color(0xFF67AE6E),
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                height: 40,
-                                child: Image.asset(
-                                  'lib/icons/decision-tree.png',
-                                  color: Colors.white,
+                    InkWell(
+                      onTap: () {
+                        // Navigator.push(
+                        //   context,
+                        //   MaterialPageRoute(
+                        //     builder: (context) => Referrelpage(),
+                        //   ),
+                        // );
+                      },
+
+                      child: Container(
+                        width: 175,
+                        child: Card(
+                          color: Color(0xFF67AE6E),
+                          elevation: 5,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  height: 40,
+                                  child: Image.asset(
+                                    'lib/icons/decision-tree.png',
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                "REFERRAL TREE", // 👈 text comes from list
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
+                                SizedBox(height: 8),
+                                Text(
+                                  "REFERRAL TREE", // 👈 text comes from list
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 30),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "VIEW", // 👈 text comes from list
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
+                                SizedBox(height: 30),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "VIEW", // 👈 text comes from list
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    "NETWORK", // 👈 text comes from list
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
+                                    Text(
+                                      "NETWORK", // 👈 text comes from list
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Complete agent", // 👈 text comes from list
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Complete agent", // 👈 text comes from list
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    "hierarchy", // 👈 text comes from list
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
+                                    Text(
+                                      "hierarchy", // 👈 text comes from list
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
                     SizedBox(width: 10),
-                    Container(
-                      width: 175,
-                      child: Card(
-                        color: Color(0xFF3D74B6),
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                height: 40,
-                                child: Image.asset(
-                                  'lib/icons/pig.png',
-                                  color: Colors.white,
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => Withdrawalrequestpage(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 175,
+                        child: Card(
+                          color: Color(0xFF3D74B6),
+                          elevation: 5,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  height: 40,
+                                  child: Image.asset(
+                                    'lib/icons/pig.png',
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 8),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "WITHDRAWAL", // 👈 text comes from list
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
+                                SizedBox(height: 8),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "WITHDRAWAL", // 👈 text comes from list
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    "REQUESTS", // 👈 text comes from list
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
+                                    Text(
+                                      "REQUESTS", // 👈 text comes from list
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 8),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "2", // 👈 text comes from list
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
+                                  ],
+                                ),
+                                SizedBox(height: 8),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "2", // 👈 text comes from list
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    "Pending", // 👈 text comes from list
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
+                                    Text(
+                                      "Pending", // 👈 text comes from list
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Approve agent", // 👈 text comes from list
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Approve agent", // 👈 text comes from list
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    "payouts", // 👈 text comes from list
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
+                                    Text(
+                                      "payouts", // 👈 text comes from list
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -1043,74 +1165,85 @@ class _DashboardBodyState extends State<DashboardBody> {
                   ],
                 ),
                 SizedBox(height: 10.0),
-                Container(
-                  width: 175,
-                  child: Card(
-                    color: Color(0xFF5C7285),
-                    elevation: 5,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            height: 40,
-                            child: Image.asset(
-                              'lib/icons/charts.png',
-                              color: Colors.white,
+                InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => Reportspage()),
+                    );
+                  },
+                  child: Container(
+                    width: 175,
+                    child: Card(
+                      color: Color(0xFF5C7285),
+                      elevation: 5,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              height: 40,
+                              child: Image.asset(
+                                'lib/icons/charts.png',
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            "REPORTS", // 👈 text comes from list
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                          ),
-                          SizedBox(height: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "VIEW &", // 👈 text comes from list
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            SizedBox(height: 8),
+                            Text(
+                              "REPORTS", // 👈 text comes from list
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
                               ),
-                              Text(
-                                "EXPORT", // 👈 text comes from list
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
+                            ),
+                            SizedBox(height: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "VIEW &", // 👈 text comes from list
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Download detailed", // 👈 text comes from list
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
+                                Text(
+                                  "EXPORT", // 👈 text comes from list
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                "reports", // 👈 text comes from list
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Download detailed", // 👈 text comes from list
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                                Text(
+                                  "reports", // 👈 text comes from list
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -1227,12 +1360,14 @@ class DrawerMenuRow extends StatelessWidget {
   final IconData? icon; // optional icon
   final String? imagePath; // optional image
   final String title;
+  final VoidCallback? onTap; // <-- add this
 
   const DrawerMenuRow({
     super.key,
     this.icon,
     this.imagePath,
     required this.title,
+    this.onTap, // <-- accept callback
   });
 
   @override
@@ -1240,25 +1375,20 @@ class DrawerMenuRow extends StatelessWidget {
     Widget leadingWidget;
 
     if (imagePath != null) {
-      // If image provided, show image
       leadingWidget = Image.asset(
         imagePath!,
         width: 24,
         height: 24,
-        color: Colors.green, // optional tint
+        color: Colors.green,
       );
     } else if (icon != null) {
-      // If icon provided, show icon
       leadingWidget = Icon(icon, color: Colors.green);
     } else {
-      // fallback (empty box if nothing passed)
       leadingWidget = const SizedBox(width: 24, height: 24);
     }
 
     return InkWell(
-      onTap: () {
-        Navigator.pop(context); // Close drawer on tap
-      },
+      onTap: onTap, // <-- call the callback
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
         child: Row(

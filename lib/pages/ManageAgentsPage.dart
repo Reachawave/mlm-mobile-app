@@ -1,4 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:myprojects/pages/WithdrawalRequestPage.dart';
+
+import 'CommisionPayoutPage.dart';
+import 'DashboardPage.dart';
+import 'ManageBranches.dart';
+import 'TotalRevenuePage.dart';
+import 'TotalVenturesPage.dart';
 
 class ManageAgentPage extends StatelessWidget {
   const ManageAgentPage({super.key});
@@ -59,7 +66,14 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
                 width: 600,
                 height: 400,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.black54),
+                      iconSize: 20,
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -216,7 +230,7 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
                                 "Select a Branch",
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey,
+                                  color: Colors.black,
                                 ),
                               ),
                               decoration: InputDecoration(
@@ -667,7 +681,14 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
                 width: 600,
                 height: 400,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.black54),
+                      iconSize: 20,
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -989,35 +1010,121 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
               child: ListView(
                 children: [
                   DrawerMenuRow(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const Dashboardpage(),
+                        ),
+                      );
+                    },
                     imagePath: "lib/icons/home.png",
                     title: "Dashboard",
                   ),
-                  DrawerMenuRow(icon: Icons.people_outlined, title: "Agents"),
+
                   DrawerMenuRow(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ManageAgentPage(),
+                        ),
+                      );
+                    },
+                    icon: Icons.people_outlined,
+                    title: "Agents",
+                  ),
+                  DrawerMenuRow(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TotalVenturesPage(),
+                        ),
+                      );
+                    },
                     imagePath: "lib/icons/bag.png",
                     title: "Ventures",
                   ),
+
                   DrawerMenuRow(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ManageBranchesPage(),
+                        ),
+                      );
+                    },
                     imagePath: "lib/icons/git.png",
                     title: "Branches",
                   ),
                   DrawerMenuRow(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TotalRevenuePage(),
+                        ),
+                      );
+                    },
                     icon: Icons.account_balance_wallet_outlined,
                     title: "Investments",
                   ),
                   DrawerMenuRow(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CommisionPayoutPage(),
+                        ),
+                      );
+                    },
                     imagePath: "lib/icons/coins.png",
                     title: "Payouts",
                   ),
                   DrawerMenuRow(
+                    onTap: () {
+                      Navigator.pop(context);
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //     builder: (context) => const TotalRevenuePage(),
+                      //   ),
+                      // );
+                    },
                     imagePath: "lib/icons/decision-tree.png",
                     title: "Referral Tree",
                   ),
                   DrawerMenuRow(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const Withdrawalrequestpage(),
+                        ),
+                      );
+                    },
                     imagePath: "lib/icons/coins.png",
                     title: "Withdrawals",
                   ),
                   DrawerMenuRow(
+                    onTap: () {
+                      Navigator.pop(context);
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //     builder: (context) => const TotalRevenuePage(),
+                      //   ),
+                      // );
+                    },
                     imagePath: "lib/icons/charts.png",
                     title: "Reports",
                   ),
@@ -1107,21 +1214,26 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
               children: [
                 Row(
                   children: [
-                    Container(
-                      height: 45,
-                      width: 45,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.black12, width: 1.0),
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(
-                          10.0,
-                        ), // Uniform radius for all corners
-                      ),
+                    InkWell(
+                      onTap: () {
+                        Navigator.pop(context); // Go back to previous page
+                      },
                       child: Container(
-                        height: 8,
-                        child: Image.asset(
-                          'lib/icons/back-arrow.png',
-                          color: Colors.black,
+                        height: 45,
+                        width: 45,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.black12, width: 1.0),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(
+                            10.0,
+                          ), // Uniform radius for all corners
+                        ),
+                        child: Container(
+                          height: 8,
+                          child: Image.asset(
+                            'lib/icons/back-arrow.png',
+                            color: Colors.black,
+                          ),
                         ),
                       ),
                     ),
@@ -1474,12 +1586,14 @@ class DrawerMenuRow extends StatelessWidget {
   final IconData? icon; // optional icon
   final String? imagePath; // optional image
   final String title;
+  final VoidCallback? onTap; // <-- add this
 
   const DrawerMenuRow({
     super.key,
     this.icon,
     this.imagePath,
     required this.title,
+    this.onTap, // <-- accept callback
   });
 
   @override
@@ -1487,25 +1601,20 @@ class DrawerMenuRow extends StatelessWidget {
     Widget leadingWidget;
 
     if (imagePath != null) {
-      // If image provided, show image
       leadingWidget = Image.asset(
         imagePath!,
         width: 24,
         height: 24,
-        color: Colors.green, // optional tint
+        color: Colors.green,
       );
     } else if (icon != null) {
-      // If icon provided, show icon
       leadingWidget = Icon(icon, color: Colors.green);
     } else {
-      // fallback (empty box if nothing passed)
       leadingWidget = const SizedBox(width: 24, height: 24);
     }
 
     return InkWell(
-      onTap: () {
-        Navigator.pop(context); // Close drawer on tap
-      },
+      onTap: onTap, // <-- call the callback
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
         child: Row(
