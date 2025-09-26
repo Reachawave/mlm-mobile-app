@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:myprojects/pages/DashboardPage.dart';
-import 'package:myprojects/pages/LoginPage.dart';
+import 'package:myprojects/adminpages/DashboardPage.dart';
+import 'package:myprojects/adminpages/LoginPage.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: 'RedRose'),
-      home: Dashboardpage(),
+      home: Loginpage(),
     );
   }
 }

@@ -1,78 +1,186 @@
 import 'package:flutter/material.dart';
-import 'package:myprojects/pages/ManageAgentsPage.dart';
-import 'package:myprojects/pages/WithdrawalRequestPage.dart';
+import 'package:myprojects/adminpages/WithdrawalRequestPage.dart';
 
+import 'CommisionPayoutPage.dart';
 import 'DashboardPage.dart';
-import 'ManageBranches.dart';
+import 'ManageAgentsPage.dart';
 import 'TotalRevenuePage.dart';
 import 'TotalVenturesPage.dart';
 
-class CommisionPayoutPage extends StatelessWidget {
-  const CommisionPayoutPage({super.key});
+class ManageBranchesPage extends StatelessWidget {
+  const ManageBranchesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: CommisionPayoutBody());
+    return Scaffold(body: ManageBranchesPageBody());
   }
 }
 
-class CommisionPayoutBody extends StatefulWidget {
-  const CommisionPayoutBody({super.key});
+class ManageBranchesPageBody extends StatelessWidget {
+  const ManageBranchesPageBody({super.key});
 
-  @override
-  State<CommisionPayoutBody> createState() => _CommisionPayoutBodyState();
-}
+  void showUserFormDialog(BuildContext context) {
+    final TextEditingController branchNameController = TextEditingController();
+    final TextEditingController locationController = TextEditingController();
 
-class _CommisionPayoutBodyState extends State<CommisionPayoutBody> {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          insetPadding: EdgeInsets.zero, // 👈 removes side margins
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.zero, // 👈 square corners
+          ),
+          child: SizedBox(
+            width: double.infinity, // 👈 full width
+            height: 400, // adjust height as needed
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 30.0,
+                vertical: 8.0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // 👇 Close button at top-right
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.black54),
+                    iconSize: 24,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+
+                  // Title + subtitle
+                  Column(
+                    children: const [
+                      Text(
+                        "Create New Branch",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 18.0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 5),
+                      Text(
+                        "Fill in the details below to add a new branch",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.green, fontSize: 16.0),
+                      ),
+                      SizedBox(height: 20),
+                    ],
+                  ),
+
+                  // 👇 Scrollable form
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Branch Name",
+                            style: TextStyle(fontSize: 16.0),
+                          ),
+                          const SizedBox(height: 6.0),
+                          TextField(
+                            controller: branchNameController,
+                            decoration: const InputDecoration(
+                              hintText: "e.g.,Hyderabad Main",
+                              hintStyle: TextStyle(
+                                color: Colors.green,
+                                fontSize: 16,
+                              ),
+                              border: OutlineInputBorder(),
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Colors.green,
+                                  width: 2.0,
+                                ),
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 10,
+                                horizontal: 20,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
+                          const Text(
+                            "Location",
+                            style: TextStyle(fontSize: 16.0),
+                          ),
+                          const SizedBox(height: 6.0),
+                          TextField(
+                            controller: locationController,
+                            decoration: const InputDecoration(
+                              hintText: "e.g., Ameerpet",
+                              hintStyle: TextStyle(
+                                color: Colors.green,
+                                fontSize: 16,
+                              ),
+                              border: OutlineInputBorder(),
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Colors.green,
+                                  width: 2.0,
+                                ),
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 10,
+                                horizontal: 20,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            width: double.infinity, // full width button
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                              ),
+                              onPressed: () {
+                                print(
+                                  "branchname: ${branchNameController.text}",
+                                );
+                                print("location: ${locationController.text}");
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text(
+                                "Create Branch",
+                                style: TextStyle(fontSize: 16.0),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<Map<String, String>> data = [
-      {
-        "name": "chinnala tyuh",
-        "id": "svd-st-23",
-        "amount": "2,00,000",
-        "date": "1/08/2025",
-        "status": "Pending",
-      },
-      {
-        "name": "Sunitha Sharma",
-        "id": "svd-st-24",
-        "amount": "1,50,000",
-        "date": "5/08/2025",
-        "status": "Approved",
-      },
-      {
-        "name": "Ravi Kumar Chinnala",
-        "id": "svd-st-25",
-        "amount": "75,000",
-        "date": "10/08/2025",
-        "status": "Declined",
-      },
-      {
-        "name": "chinnala tyuh",
-        "id": "svd-st-23",
-        "amount": "2,00,000",
-        "date": "1/08/2025",
-        "status": "Pending",
-      },
-      {
-        "name": "Sunitha Sharma",
-        "id": "svd-st-24",
-        "amount": "1,50,000",
-        "date": "5/08/2025",
-        "status": "Approved",
-      },
-      {
-        "name": "Ravi Kumar Chinnala",
-        "id": "svd-st-25",
-        "amount": "75,000",
-        "date": "10/08/2025",
-        "status": "Declined",
-      },
-      // Add more rows as needed
+      {"name": "karimnagar", "id": "svd-\nst-23", "location": "kanyakumari"},
+      {"name": "hanmakonda", "id": "svd-\nst-24", "location": "jyothinagar"},
+      {"name": "rameshwaram", "id": "svd-\nst-25", "location": "subedari"},
+      {"name": "kolkonda", "id": "svd-\nst-26", "location": "golkonda"},
     ];
     return Scaffold(
-      drawerEnableOpenDragGesture: false,
       drawer: Drawer(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -343,15 +451,59 @@ class _CommisionPayoutBodyState extends State<CommisionPayoutBody> {
                     ),
                     SizedBox(width: 20.0),
                     Text(
-                      "Commission Payouts",
+                      "Manage\nBranches",
                       style: TextStyle(
-                        fontSize: 24.0,
+                        fontSize: 26.0,
                         fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 20.0),
+                    InkWell(
+                      onTap: () {
+                        showUserFormDialog(context);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          // color: Colors.green,
+                          borderRadius: BorderRadius.circular(
+                            6,
+                          ), // rounded corners
+                          border: Border.all(
+                            color: Colors.grey, // border color
+                            width: 0.5,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              height: 24,
+                              child: Image.asset(
+                                'lib/icons/git.png',
+                                color: Colors.black,
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 6,
+                            ), // spacing between icon and text
+                            Text(
+                              "Create Branch",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 30.0),
+                SizedBox(height: 20.0),
                 Container(
                   width: 1000,
                   decoration: BoxDecoration(
@@ -369,59 +521,51 @@ class _CommisionPayoutBodyState extends State<CommisionPayoutBody> {
                         Row(
                           children: [
                             Container(
-                              height: 24.0,
+                              height: 20,
                               child: Image.asset(
-                                "lib/icons/coins.png",
+                                'lib/icons/bank.png',
                                 color: Colors.green,
                               ),
                             ),
                             SizedBox(width: 10.0),
                             Text(
-                              "Payout History",
+                              "Branches",
                               style: TextStyle(
-                                fontSize: 22.0,
+                                fontSize: 24.0,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
                         ),
                         Text(
-                          "A complete log of all agent withdrawal requests",
-                          style: TextStyle(fontSize: 14.0, color: Colors.green),
+                          "Manage all company branches",
+                          style: TextStyle(fontSize: 16.0, color: Colors.green),
                         ),
-                        SizedBox(height: 30.0),
+                        SizedBox(height: 20.0),
                         Padding(
                           padding: const EdgeInsets.all(10.0),
                           child: Row(
                             children: [
                               Text(
-                                "Agent",
+                                "Branch\nID",
                                 style: TextStyle(
-                                  fontSize: 14.0,
+                                  fontSize: 16.0,
                                   color: Colors.green,
                                 ),
                               ),
-                              SizedBox(width: 40.0),
+                              SizedBox(width: 45.0),
                               Text(
-                                "Amount",
+                                "Name",
                                 style: TextStyle(
-                                  fontSize: 14.0,
+                                  fontSize: 16.0,
                                   color: Colors.green,
                                 ),
                               ),
-                              SizedBox(width: 22.0),
+                              SizedBox(width: 80.0),
                               Text(
-                                "Date",
+                                "Location",
                                 style: TextStyle(
-                                  fontSize: 14.0,
-                                  color: Colors.green,
-                                ),
-                              ),
-                              SizedBox(width: 50.0),
-                              Text(
-                                "Status",
-                                style: TextStyle(
-                                  fontSize: 14.0,
+                                  fontSize: 16.0,
                                   color: Colors.green,
                                 ),
                               ),
@@ -429,18 +573,15 @@ class _CommisionPayoutBodyState extends State<CommisionPayoutBody> {
                           ),
                         ),
                         SizedBox(height: 3.0),
-                        // Divider(thickness: 0.3, color: Colors.green),
                         ListView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: data.length,
                           itemBuilder: (BuildContext context, int index) {
                             final item = data[index];
-                            final name = item["name"]!;
-                            final id = item["id"]!;
-                            final amount = item["amount"]!;
-                            final date = item["date"]!;
-                            final status = item["status"]!;
+                            final name = item["name"] ?? '';
+                            final id = item["id"] ?? '';
+                            final location = item["location"] ?? '';
 
                             return Column(
                               children: [
@@ -454,9 +595,36 @@ class _CommisionPayoutBodyState extends State<CommisionPayoutBody> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      // Name + ID column (auto-wrap)
                                       Expanded(
-                                        flex: 2,
+                                        flex: 1,
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              id,
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                color: Colors.black,
+                                              ),
+                                              softWrap: true,
+                                              overflow: TextOverflow.visible,
+                                              maxLines: null,
+                                            ),
+                                            // const SizedBox(height: 2),
+                                            // Text(
+                                            //   id,
+                                            //   style: const TextStyle(
+                                            //     fontSize: 10,
+                                            //     color: Colors.green,
+                                            //   ),
+                                            // ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(width: 10),
+                                      Expanded(
+                                        flex: 1,
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
@@ -464,98 +632,32 @@ class _CommisionPayoutBodyState extends State<CommisionPayoutBody> {
                                             Text(
                                               name,
                                               style: const TextStyle(
-                                                fontSize: 12,
+                                                fontSize: 16,
                                                 color: Colors.black,
                                               ),
                                               softWrap: true,
                                               overflow: TextOverflow.visible,
                                               maxLines: null,
                                             ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              id,
-                                              style: const TextStyle(
-                                                fontSize: 10,
-                                                color: Colors.green,
-                                              ),
-                                            ),
                                           ],
                                         ),
                                       ),
-
-                                      const SizedBox(width: 12),
-
-                                      // Amount column
+                                      SizedBox(width: 30),
                                       Expanded(
-                                        flex: 2,
+                                        flex: 1,
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            const SizedBox(height: 8),
                                             Text(
-                                              amount,
+                                              location,
                                               style: const TextStyle(
-                                                fontSize: 12,
+                                                fontSize: 16,
                                                 color: Colors.black,
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-
-                                      // Date column
-                                      Expanded(
-                                        flex: 2,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              date,
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.black,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(width: 10.0),
-                                      // Status column (pill-shaped container)
-                                      Expanded(
-                                        flex: 2,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            const SizedBox(height: 8),
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 12,
-                                                    vertical: 6,
-                                                  ),
-                                              decoration: BoxDecoration(
-                                                color: getStatusContainerColor(
-                                                  status,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                      50,
-                                                    ), // pill shape
-                                              ),
-                                              child: Text(
-                                                status,
-                                                style: TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: getStatusTextColor(
-                                                    status,
-                                                  ),
-                                                ),
-                                              ),
+                                              softWrap: true,
+                                              overflow: TextOverflow.visible,
+                                              maxLines: null,
                                             ),
                                           ],
                                         ),
@@ -627,32 +729,5 @@ class DrawerMenuRow extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-// Helper to get background color
-Color getStatusContainerColor(String status) {
-  switch (status.toLowerCase()) {
-    case "approved":
-      return Colors.green;
-    case "declined":
-      return Colors.red;
-    case "pending":
-      return Colors.grey;
-    default:
-      return Colors.grey.shade300;
-  }
-}
-
-// Helper to get text color
-Color getStatusTextColor(String status) {
-  switch (status.toLowerCase()) {
-    case "approved":
-    case "declined":
-      return Colors.white;
-    case "pending":
-      return Colors.black;
-    default:
-      return Colors.black;
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:myprojects/pages/LoginPage.dart';
+import 'package:myprojects/adminpages/LoginPage.dart';
 
 class Forgotpasswod extends StatelessWidget {
   const Forgotpasswod({super.key});
@@ -30,7 +30,6 @@ class _ForgotpasswodBodyState extends State<ForgotpasswodBody> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              height: 500.0,
               decoration: BoxDecoration(
                 color: Colors.white, // 👈 color inside decoration
                 borderRadius: BorderRadius.circular(10),

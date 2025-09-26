@@ -1,31 +1,76 @@
 import 'package:flutter/material.dart';
-import 'package:myprojects/pages/CommisionPayoutPage.dart';
-import 'package:myprojects/pages/ManageBranches.dart';
-import 'package:myprojects/pages/TotalVenturesPage.dart';
-import 'package:myprojects/pages/WithdrawalRequestPage.dart';
+import 'package:myprojects/adminpages//ManageAgentsPage.dart';
+import 'package:myprojects/adminpages/WithdrawalRequestPage.dart';
 
 import 'DashboardPage.dart';
-import 'ManageAgentsPage.dart';
+import 'ManageBranches.dart';
+import 'TotalRevenuePage.dart';
+import 'TotalVenturesPage.dart';
 
-class TotalRevenuePage extends StatelessWidget {
-  const TotalRevenuePage({super.key});
+class CommisionPayoutPage extends StatelessWidget {
+  const CommisionPayoutPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: TotalRevenueBody());
+    return Scaffold(body: CommisionPayoutBody());
   }
 }
 
-class TotalRevenueBody extends StatefulWidget {
-  const TotalRevenueBody({super.key});
+class CommisionPayoutBody extends StatefulWidget {
+  const CommisionPayoutBody({super.key});
 
   @override
-  State<TotalRevenueBody> createState() => _TotalRevenueBodyState();
+  State<CommisionPayoutBody> createState() => _CommisionPayoutBodyState();
 }
 
-class _TotalRevenueBodyState extends State<TotalRevenueBody> {
+class _CommisionPayoutBodyState extends State<CommisionPayoutBody> {
   @override
   Widget build(BuildContext context) {
+    final List<Map<String, String>> data = [
+      {
+        "name": "chinnala tyuh",
+        "id": "svd-st-23",
+        "amount": "2,00,000",
+        "date": "1/08/2025",
+        "status": "Pending",
+      },
+      {
+        "name": "Sunitha Sharma",
+        "id": "svd-st-24",
+        "amount": "1,50,000",
+        "date": "5/08/2025",
+        "status": "Approved",
+      },
+      {
+        "name": "Ravi Kumar Chinnala",
+        "id": "svd-st-25",
+        "amount": "75,000",
+        "date": "10/08/2025",
+        "status": "Declined",
+      },
+      {
+        "name": "chinnala tyuh",
+        "id": "svd-st-23",
+        "amount": "2,00,000",
+        "date": "1/08/2025",
+        "status": "Pending",
+      },
+      {
+        "name": "Sunitha Sharma",
+        "id": "svd-st-24",
+        "amount": "1,50,000",
+        "date": "5/08/2025",
+        "status": "Approved",
+      },
+      {
+        "name": "Ravi Kumar Chinnala",
+        "id": "svd-st-25",
+        "amount": "75,000",
+        "date": "10/08/2025",
+        "status": "Declined",
+      },
+      // Add more rows as needed
+    ];
     return Scaffold(
       drawerEnableOpenDragGesture: false,
       drawer: Drawer(
@@ -275,7 +320,7 @@ class _TotalRevenueBodyState extends State<TotalRevenueBody> {
                   children: [
                     InkWell(
                       onTap: () {
-                        Navigator.pop(context);
+                        Navigator.pop(context); // Go back to previous page
                       },
                       child: Container(
                         height: 45,
@@ -298,7 +343,7 @@ class _TotalRevenueBodyState extends State<TotalRevenueBody> {
                     ),
                     SizedBox(width: 20.0),
                     Text(
-                      "All Investments",
+                      "Commission Payouts",
                       style: TextStyle(
                         fontSize: 24.0,
                         fontWeight: FontWeight.bold,
@@ -326,41 +371,57 @@ class _TotalRevenueBodyState extends State<TotalRevenueBody> {
                             Container(
                               height: 24.0,
                               child: Image.asset(
-                                "lib/icons/pig.png",
+                                "lib/icons/coins.png",
                                 color: Colors.green,
                               ),
                             ),
                             SizedBox(width: 10.0),
                             Text(
-                              "Recent Investments",
+                              "Payout History",
                               style: TextStyle(
-                                fontSize: 24.0,
+                                fontSize: 22.0,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
                         ),
                         Text(
-                          "A log of recent investment activities",
+                          "A complete log of all agent withdrawal requests",
                           style: TextStyle(fontSize: 14.0, color: Colors.green),
                         ),
                         SizedBox(height: 30.0),
                         Padding(
-                          padding: const EdgeInsets.all(16.0),
+                          padding: const EdgeInsets.all(10.0),
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
                                 "Agent",
                                 style: TextStyle(
-                                  fontSize: 16.0,
+                                  fontSize: 14.0,
                                   color: Colors.green,
                                 ),
                               ),
+                              SizedBox(width: 40.0),
                               Text(
                                 "Amount",
                                 style: TextStyle(
-                                  fontSize: 16.0,
+                                  fontSize: 14.0,
+                                  color: Colors.green,
+                                ),
+                              ),
+                              SizedBox(width: 22.0),
+                              Text(
+                                "Date",
+                                style: TextStyle(
+                                  fontSize: 14.0,
+                                  color: Colors.green,
+                                ),
+                              ),
+                              SizedBox(width: 50.0),
+                              Text(
+                                "Status",
+                                style: TextStyle(
+                                  fontSize: 14.0,
                                   color: Colors.green,
                                 ),
                               ),
@@ -368,74 +429,138 @@ class _TotalRevenueBodyState extends State<TotalRevenueBody> {
                           ),
                         ),
                         SizedBox(height: 3.0),
-                        Divider(thickness: 0.3, color: Colors.green),
+                        // Divider(thickness: 0.3, color: Colors.green),
                         ListView.builder(
-                          shrinkWrap: true, // ✅ let it size itself
-                          physics:
-                              const NeverScrollableScrollPhysics(), // ✅ avoid nested scroll
-                          itemCount: 10,
+                          shrinkWrap: true,
+                          itemCount: data.length,
                           itemBuilder: (BuildContext context, int index) {
+                            final item = data[index];
+                            final name = item["name"]!;
+                            final id = item["id"]!;
+                            final amount = item["amount"]!;
+                            final date = item["date"]!;
+                            final status = item["status"]!;
+
                             return Column(
                               children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: const [
-                                          Text(
-                                            "p.sunitha",
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                          SizedBox(height: 2),
-                                          Text(
-                                            "svd-st-23",
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.green,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: const [
-                                          Visibility(
-                                            visible: false,
-                                            child: Text(
-                                              "p.sunitha",
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                color: Colors.black,
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(height: 8),
-                                          Text(
-                                            "50,000",
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
                                 const Divider(
                                   thickness: 0.3,
                                   color: Colors.green,
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(10.0),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // Name + ID column (auto-wrap)
+                                      Expanded(
+                                        flex: 2,
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              name,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.black,
+                                              ),
+                                              softWrap: true,
+                                              overflow: TextOverflow.visible,
+                                              maxLines: null,
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              id,
+                                              style: const TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.green,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
+                                      const SizedBox(width: 12),
+
+                                      // Amount column
+                                      Expanded(
+                                        flex: 2,
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              amount,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.black,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
+                                      // Date column
+                                      Expanded(
+                                        flex: 2,
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              date,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.black,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(width: 10.0),
+                                      // Status column (pill-shaped container)
+                                      Expanded(
+                                        flex: 2,
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const SizedBox(height: 8),
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 6,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: getStatusContainerColor(
+                                                  status,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      50,
+                                                    ), // pill shape
+                                              ),
+                                              child: Text(
+                                                status,
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: getStatusTextColor(
+                                                    status,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             );
@@ -501,5 +626,32 @@ class DrawerMenuRow extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// Helper to get background color
+Color getStatusContainerColor(String status) {
+  switch (status.toLowerCase()) {
+    case "approved":
+      return Colors.green;
+    case "declined":
+      return Colors.red;
+    case "pending":
+      return Colors.grey;
+    default:
+      return Colors.grey.shade300;
+  }
+}
+
+// Helper to get text color
+Color getStatusTextColor(String status) {
+  switch (status.toLowerCase()) {
+    case "approved":
+    case "declined":
+      return Colors.white;
+    case "pending":
+      return Colors.black;
+    default:
+      return Colors.black;
   }
 }
