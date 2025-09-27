@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:new_project/adminpages/ReferrelPage.dart';
+import 'package:new_project/adminpages/ReportsPage.dart';
 import 'package:new_project/widgets/drawer_menu_row.dart' show DrawerMenuRow;
 import 'package:new_project/adminpages/DashboardPage.dart' show Dashboardpage;
 import 'package:new_project/adminpages/ManageAgentsPage.dart'
@@ -156,6 +157,12 @@ class AppDrawer extends StatelessWidget {
                 DrawerMenuRow(
                   onTap: () {
                     Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const Reportspage(),
+                      ),
+                    );
                   },
                   imagePath: "lib/icons/charts.png",
                   title: "Reports",
