@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'mainpage.dart';
+
 
 class withdrawpage extends StatelessWidget {
   const withdrawpage({super.key});
@@ -77,7 +79,12 @@ class _withdawbodyState extends State<withdawbody> {
                   children: [
                     InkWell(
                       onTap: () {
-                        Navigator.pop(context); // Go back to previous page
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => Agentdashboardmainpage(initialIndex: 0), // 👈 Withdraw tab
+                          ),
+                        );
                       },
                       child: Container(
                         height: 45,
@@ -404,7 +411,7 @@ class _withdawbodyState extends State<withdawbody> {
           ),
         ),
       ),
-    );;
+    );
   }
 }
 

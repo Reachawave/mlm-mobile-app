@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import '../agentpages/mainpage.dart';
 import 'DashboardPage.dart';
 import 'Forgotpassword.dart';
+import 'baseurl.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 
 class Loginpage extends StatelessWidget {
   const Loginpage({super.key});
@@ -21,41 +25,147 @@ class LoginBody extends StatefulWidget {
 }
 
 class _LoginBodyState extends State<LoginBody> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
+  String? validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return "Please enter an email address.";
+    }
+    RegExp emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegExp.hasMatch(value)) {
+      return "Please enter a valid email address.";
+    }
+    return null;
+  }
 
+  String? validatePassword(String? Passvalue) {
+    if (Passvalue == null || Passvalue.isEmpty) {
+      return "Please enter a password.";
+    }
+    if (Passvalue.length < 8) {
+      return "Password must be atleast 8 characters long.";
+    }
+    return null;
+  }
+
+  // void submitForm() {
+  //   if (_formKey.currentState!.validate()) {
+  //     Navigator.push(
+  //       context,
+  //       MaterialPageRoute(builder: (context) => Agentdashboardmainpage()),
+  //     );
+  //   }
+  // }
 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   String _message = '';
 
-  void _login() {
-    String username = emailController.text.trim();
+
+  Future<void> _login() async {
+    String email = emailController.text.trim();
     String password = passwordController.text.trim();
 
-    if (username == "admin" && password == "123") {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const Dashboardpage()),
-      );
-    } else if (username == "director" && password == "123") {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const Dashboardpage()),
-      );
-    } else if (username == "agent" && password == "123") {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const Agentdashboardmainpage()),
-      );
-    } else {
+    if (email.isEmpty || password.isEmpty) {
       setState(() {
-        _message = "Invalid username or password!";
+        _message = "Please enter email and password!";
+      });
+      return;
+    }
+
+    try {
+      final response = await http.post(
+
+        Uri.parse("${Constants.ipBaseUrl}public/login"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "email": email,
+          "password": password,
+        }),
+      );
+
+      // 👇 Print raw response
+      print("Status Code: ${response.statusCode}");
+      print("Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data["status"] == "success") {
+          String role = data["loginData"]["role"];
+
+
+
+          debugPrint("✅ Login Success");
+          debugPrint("Role: $role");
+          debugPrint("Email: ${data['loginData']['email']}");
+          debugPrint("Token: ${data['loginData']['token']}");
+
+          if (role == "ADMIN") {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const Dashboardpage()),
+            );
+          } else if (role == "DIRECTOR") {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const Agentdashboardmainpage()),
+            );
+          } else if (role == "AGENT") {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const Agentdashboardmainpage()),
+            );
+          } else {
+            setState(() {
+              _message = "Unknown role!";
+            });
+          }
+        } else {
+          setState(() {
+            _message = "Login failed!";
+          });
+        }
+      } else {
+        setState(() {
+          _message = "Error: ${response.statusCode}";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _message = "Something went wrong: $e";
       });
     }
   }
 
 
+  // void _login() {
+  //   String username = emailController.text.trim();
+  //   String password = passwordController.text.trim();
+  //
+  //   if (username == "admin" && password == "123") {
+  //     Navigator.pushReplacement(
+  //       context,
+  //       MaterialPageRoute(builder: (context) => const Dashboardpage()),
+  //     );
+  //   } else if (username == "director" && password == "123") {
+  //     Navigator.pushReplacement(
+  //       context,
+  //       MaterialPageRoute(builder: (context) => const Dashboardpage()),
+  //     );
+  //   } else if (username == "agent" && password == "123") {
+  //     Navigator.pushReplacement(
+  //       context,
+  //       MaterialPageRoute(builder: (context) => const Agentdashboardmainpage()),
+  //     );
+  //   } else {
+  //     setState(() {
+  //       _message = "Invalid username or password!";
+  //     });
+  //   }
+  // }
 
   bool _obscurePassword = true;
 
@@ -135,7 +245,10 @@ class _LoginBodyState extends State<LoginBody> {
                               SizedBox(height: 10),
                               Text("Email", style: TextStyle(fontSize: 16.0)),
                               SizedBox(height: 6.0),
-                              TextField(
+                              TextFormField(
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
+                                validator: validateEmail,
                                 controller: emailController,
                                 decoration: const InputDecoration(
                                   border: OutlineInputBorder(
@@ -150,17 +263,18 @@ class _LoginBodyState extends State<LoginBody> {
                                     color: Colors.green,
                                     fontSize: 16,
                                   ),
-        
+
                                   contentPadding: const EdgeInsets.symmetric(
                                     vertical: 10, // 👈 height of TextField
                                     horizontal: 20,
                                   ),
                                 ),
                               ),
-        
+
                               SizedBox(height: 16.0),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     "Password",
@@ -186,7 +300,10 @@ class _LoginBodyState extends State<LoginBody> {
                                 ],
                               ),
                               SizedBox(height: 6.0),
-                              TextField(
+                              TextFormField(
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
+                                validator: validatePassword,
                                 controller: passwordController,
                                 obscureText:
                                     _obscurePassword, // 👈 use the state variable
@@ -212,7 +329,7 @@ class _LoginBodyState extends State<LoginBody> {
                                       ), // 👈 rectangle with rounded corners
                                     ),
                                   ),
-        
+
                                   contentPadding: const EdgeInsets.symmetric(
                                     vertical: 10,
                                     horizontal: 20,
@@ -221,8 +338,8 @@ class _LoginBodyState extends State<LoginBody> {
                               ),
                               SizedBox(height: 20.0),
                               SizedBox(
-                                width:
-                                    double.infinity, // take full available width
+                                width: double
+                                    .infinity, // take full available width
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors
@@ -239,7 +356,6 @@ class _LoginBodyState extends State<LoginBody> {
                                   ),
                                   onPressed: () {
                                     _login();
-        
                                   },
                                   child: const Text("Login"),
                                 ),
@@ -268,9 +384,9 @@ class DirectorDashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Director Dashboard")),
-      body: const Center(child: Text("Welcome, Director!", style: TextStyle(fontSize: 22))),
+      body: const Center(
+        child: Text("Welcome, Director!", style: TextStyle(fontSize: 22)),
+      ),
     );
   }
 }
-
-

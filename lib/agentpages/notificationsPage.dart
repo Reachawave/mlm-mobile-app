@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'mainpage.dart';
+
 class notifypage extends StatelessWidget {
   const notifypage({super.key});
 
@@ -77,7 +79,12 @@ class _notifybodyState extends State<notifybody> {
                 children: [
                   InkWell(
                     onTap: () {
-                      Navigator.pop(context); // Go back to previous page
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Agentdashboardmainpage(initialIndex: 0), // 👈 Withdraw tab
+                        ),
+                      );
                     },
                     child: Container(
                       height: 45,

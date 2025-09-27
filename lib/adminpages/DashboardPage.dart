@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // for date formatting
-import 'package:myprojects/adminpages/ReportsPage.dart';
-import 'package:myprojects/adminpages/WithdrawalRequestPage.dart';
+import 'package:new_project/adminpages/ReportsPage.dart';
+import 'package:new_project/adminpages/WithdrawalRequestPage.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'CommisionPayoutPage.dart';
 import 'ManageAgentsPage.dart';
@@ -28,6 +28,7 @@ class DashboardBody extends StatefulWidget {
 }
 
 class _DashboardBodyState extends State<DashboardBody> {
+
   void showUserFormDialog(BuildContext context) {
     final TextEditingController nameController = TextEditingController();
     final TextEditingController fatherNameController = TextEditingController();
@@ -426,7 +427,7 @@ class _DashboardBodyState extends State<DashboardBody> {
                             DropdownButtonFormField<String>(
                               value: selectventure,
                               isExpanded:
-                                  true, // 👈 allow full width and wrap long text
+                              true, // 👈 allow full width and wrap long text
                               items: ventures.map((vent) {
                                 return DropdownMenuItem(
                                   value: vent,
@@ -556,10 +557,10 @@ class _DashboardBodyState extends State<DashboardBody> {
                                           ),
                                         ),
                                         contentPadding:
-                                            const EdgeInsets.symmetric(
-                                              vertical: 8,
-                                              horizontal: 6,
-                                            ),
+                                        const EdgeInsets.symmetric(
+                                          vertical: 8,
+                                          horizontal: 6,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -603,10 +604,10 @@ class _DashboardBodyState extends State<DashboardBody> {
                                         ),
                                       ),
                                       contentPadding:
-                                          const EdgeInsets.symmetric(
-                                            vertical: 8,
-                                            horizontal: 6,
-                                          ),
+                                      const EdgeInsets.symmetric(
+                                        vertical: 8,
+                                        horizontal: 6,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -616,7 +617,7 @@ class _DashboardBodyState extends State<DashboardBody> {
                             SizedBox(height: 20),
                             SizedBox(
                               width:
-                                  double.infinity, // take full available width
+                              double.infinity, // take full available width
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors
@@ -658,6 +659,7 @@ class _DashboardBodyState extends State<DashboardBody> {
       },
     );
   }
+
 
   void showUserFormDialog1(BuildContext context) {
     final TextEditingController ventureNameController = TextEditingController();
@@ -2372,10 +2374,7 @@ class _DashboardBodyState extends State<DashboardBody> {
                             ),
                           ),
                           SizedBox(width: 20.0),
-                          Text(
-                            "Create Agent",
-                            style: TextStyle(fontSize: 16.0),
-                          ),
+                          Text("Create Agent", style: TextStyle(fontSize: 16.0)),
                         ],
                       ),
                     ),
@@ -2452,10 +2451,7 @@ class _DashboardBodyState extends State<DashboardBody> {
                             ),
                           ),
                           SizedBox(width: 20.0),
-                          Text(
-                            "Create Branch",
-                            style: TextStyle(fontSize: 16.0),
-                          ),
+                          Text("Create Branch", style: TextStyle(fontSize: 16.0)),
                         ],
                       ),
                     ),

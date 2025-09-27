@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:myprojects/agentpages/withdrawpage.dart';
+import 'package:new_project/agentpages/withdrawpage.dart';
 
 import 'agentprofilepage.dart';
 import 'mainpage.dart' show Agentdashboardmainpage;
+import 'networkpage.dart';
 
 class Agentdashboardpage extends StatelessWidget {
   const Agentdashboardpage({super.key});
@@ -21,23 +22,16 @@ class dashbody extends StatefulWidget {
 }
 
 class _dashbodyState extends State<dashbody> {
-  final TextEditingController avgInvestmentCtrl = TextEditingController(
-    text: "50000",
-  );
+  final TextEditingController avgInvestmentCtrl = TextEditingController(text: "50000");
   final TextEditingController l1Ctrl = TextEditingController();
   final TextEditingController l2Ctrl = TextEditingController();
   final TextEditingController l3Ctrl = TextEditingController();
   final TextEditingController l4Ctrl = TextEditingController();
   final TextEditingController l5Ctrl = TextEditingController();
 
-  double l1Earning = 0,
-      l2Earning = 0,
-      l3Earning = 0,
-      l4Earning = 0,
-      l5Earning = 0;
+  double l1Earning = 0, l2Earning = 0, l3Earning = 0, l4Earning = 0, l5Earning = 0;
 
-  double get totalEarning =>
-      l1Earning + l2Earning + l3Earning + l4Earning + l5Earning;
+  double get totalEarning => l1Earning + l2Earning + l3Earning + l4Earning + l5Earning;
 
   void calculateEarnings() {
     double base = double.tryParse(avgInvestmentCtrl.text) ?? 50000;
@@ -71,7 +65,7 @@ class _dashbodyState extends State<dashbody> {
               children: [
                 Text(
                   "Welcome Back",
-                  style: TextStyle(color: Colors.green, fontSize: 22),
+                  style: TextStyle( color:Colors.green,fontSize: 22),
                 ),
                 SizedBox(height: 5.0),
                 Text(
@@ -83,12 +77,12 @@ class _dashbodyState extends State<dashbody> {
                   children: [
                     InkWell(
                       onTap: () {
-                        // Navigator.push(
-                        //   context,
-                        //   MaterialPageRoute(
-                        //     builder: (context) => TotalRevenuePage(),
-                        //   ),
-                        // );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => Agentdashboardmainpage(initialIndex: 1), // 👈 Withdraw tab
+                          ),
+                        );
                       },
                       child: Container(
                         height: 200,
@@ -147,9 +141,7 @@ class _dashbodyState extends State<dashbody> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => Agentdashboardmainpage(
-                              initialIndex: 2,
-                            ), // 👈 Withdraw tab
+                            builder: (context) => Agentdashboardmainpage(initialIndex: 2), // 👈 Withdraw tab
                           ),
                         );
                       },
@@ -213,7 +205,15 @@ class _dashbodyState extends State<dashbody> {
                 Row(
                   children: [
                     InkWell(
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => Agentdashboardmainpage(initialIndex: 4), // 👈 Withdraw tab
+                          ),
+                        );
+
+                      },
                       child: Container(
                         height: 200,
                         width: 175,
@@ -230,17 +230,16 @@ class _dashbodyState extends State<dashbody> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Image.asset(
-                                  "lib/icons/notification.png", // 👈 your image path
-                                  width: 40, // same as icon size
+                                  "lib/icons/notification.png",  // 👈 your image path
+                                  width: 40,               // same as icon size
                                   height: 40,
-                                  color: Colors
-                                      .white, // optional → applies color overlay like Icon
+                                  color: Colors.white,     // optional → applies color overlay like Icon
                                 ),
                                 SizedBox(height: 30),
                                 Visibility(
                                   visible: false,
                                   child: Text(
-                                    "Withdraw", // 👈 text comes from list
+                                    "notify", // 👈 text comes from list
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white,
@@ -276,9 +275,7 @@ class _dashbodyState extends State<dashbody> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => Agentdashboardmainpage(
-                              initialIndex: 4,
-                            ), // 👈 Withdraw tab
+                            builder: (context) => Agentdashboardmainpage(initialIndex: 5), // 👈 Withdraw tab
                           ),
                         );
                       },
@@ -298,17 +295,16 @@ class _dashbodyState extends State<dashbody> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Image.asset(
-                                  "lib/icons/profile.png", // 👈 your image path
-                                  width: 40, // same as icon size
+                                  "lib/icons/profile.png",  // 👈 your image path
+                                  width: 40,               // same as icon size
                                   height: 40,
-                                  color: Colors
-                                      .white, // optional → applies color overlay like Icon
+                                  color: Colors.white,     // optional → applies color overlay like Icon
                                 ),
                                 SizedBox(height: 30),
                                 Visibility(
                                   visible: false,
                                   child: Text(
-                                    "Withdraw", // 👈 text comes from list
+                                    "profile", // 👈 text comes from list
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white,
@@ -345,12 +341,12 @@ class _dashbodyState extends State<dashbody> {
                   children: [
                     InkWell(
                       onTap: () {
-                        // Navigator.push(
-                        //   context,
-                        //   MaterialPageRoute(
-                        //     builder: (context) => TotalVenturesPage(),
-                        //   ),
-                        // );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => Agentdashboardmainpage(initialIndex: 3), // 👈 Withdraw tab
+                          ),
+                        );
                       },
                       child: Container(
                         height: 200,
@@ -368,11 +364,10 @@ class _dashbodyState extends State<dashbody> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Image.asset(
-                                  "lib/icons/charts.png", // 👈 your image path
-                                  width: 40, // same as icon size
+                                  "lib/icons/charts.png",  // 👈 your image path
+                                  width: 40,               // same as icon size
                                   height: 40,
-                                  color: Colors
-                                      .white, // optional → applies color overlay like Icon
+                                  color: Colors.white,     // optional → applies color overlay like Icon
                                 ),
                                 SizedBox(height: 20),
                                 Text(
@@ -431,11 +426,10 @@ class _dashbodyState extends State<dashbody> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Image.asset(
-                                  "lib/icons/text.png", // 👈 your image path
-                                  width: 40, // same as icon size
+                                  "lib/icons/text.png",  // 👈 your image path
+                                  width: 40,               // same as icon size
                                   height: 40,
-                                  color: Colors
-                                      .white, // optional → applies color overlay like Icon
+                                  color: Colors.white,     // optional → applies color overlay like Icon
                                 ),
                                 SizedBox(height: 20),
                                 Text(
@@ -497,11 +491,10 @@ class _dashbodyState extends State<dashbody> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Image.asset(
-                                  "lib/icons/telephone.png", // 👈 your image path
-                                  width: 40, // same as icon size
+                                  "lib/icons/telephone.png",  // 👈 your image path
+                                  width: 40,               // same as icon size
                                   height: 40,
-                                  color: Colors
-                                      .white, // optional → applies color overlay like Icon
+                                  color: Colors.white,     // optional → applies color overlay like Icon
                                 ),
                                 SizedBox(height: 40),
                                 Visibility(
@@ -562,11 +555,10 @@ class _dashbodyState extends State<dashbody> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Image.asset(
-                                  "lib/icons/info-sign.png", // 👈 your image path
-                                  width: 40, // same as icon size
+                                  "lib/icons/info-sign.png",  // 👈 your image path
+                                  width: 40,               // same as icon size
                                   height: 40,
-                                  color: Colors
-                                      .white, // optional → applies color overlay like Icon
+                                  color: Colors.white,     // optional → applies color overlay like Icon
                                 ),
                                 SizedBox(height: 40),
                                 Visibility(
@@ -643,17 +635,11 @@ class _dashbodyState extends State<dashbody> {
                           children: [
                             Text(
                               "Estimate your potential commission",
-                              style: TextStyle(
-                                fontSize: 16.0,
-                                color: Colors.green,
-                              ),
+                              style: TextStyle(fontSize: 16.0, color: Colors.green),
                             ),
                             Text(
                               "based on your refferal network",
-                              style: TextStyle(
-                                fontSize: 16.0,
-                                color: Colors.green,
-                              ),
+                              style: TextStyle(fontSize: 16.0, color: Colors.green),
                             ),
                           ],
                         ),
@@ -698,10 +684,7 @@ class _dashbodyState extends State<dashbody> {
                                 children: [
                                   const Text(
                                     "Level 1",
-                                    style: TextStyle(
-                                      fontSize: 16.0,
-                                      color: Colors.black,
-                                    ),
+                                    style: TextStyle(fontSize: 16.0, color: Colors.black),
                                   ),
                                   const SizedBox(height: 6),
                                   TextField(
@@ -710,9 +693,7 @@ class _dashbodyState extends State<dashbody> {
                                     onChanged: (_) => calculateEarnings(),
                                     decoration: const InputDecoration(
                                       border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(5),
-                                        ),
+                                        borderRadius: BorderRadius.all(Radius.circular(5)),
                                       ),
                                       // hintText: "50000",
                                       hintStyle: TextStyle(
@@ -730,6 +711,7 @@ class _dashbodyState extends State<dashbody> {
                             ),
 
                             const SizedBox(width: 16), // space between columns
+
                             // Second Column
                             Expanded(
                               child: Column(
@@ -737,10 +719,7 @@ class _dashbodyState extends State<dashbody> {
                                 children: [
                                   const Text(
                                     "Level 2",
-                                    style: TextStyle(
-                                      fontSize: 16.0,
-                                      color: Colors.black,
-                                    ),
+                                    style: TextStyle(fontSize: 16.0, color: Colors.black),
                                   ),
                                   const SizedBox(height: 6),
                                   TextField(
@@ -749,9 +728,7 @@ class _dashbodyState extends State<dashbody> {
                                     onChanged: (_) => calculateEarnings(),
                                     decoration: const InputDecoration(
                                       border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(5),
-                                        ),
+                                        borderRadius: BorderRadius.all(Radius.circular(5)),
                                       ),
                                       // hintText: "100",
                                       hintStyle: TextStyle(
@@ -780,10 +757,7 @@ class _dashbodyState extends State<dashbody> {
                                 children: [
                                   const Text(
                                     "Level 3",
-                                    style: TextStyle(
-                                      fontSize: 16.0,
-                                      color: Colors.black,
-                                    ),
+                                    style: TextStyle(fontSize: 16.0, color: Colors.black),
                                   ),
                                   const SizedBox(height: 6),
                                   TextField(
@@ -792,9 +766,7 @@ class _dashbodyState extends State<dashbody> {
                                     onChanged: (_) => calculateEarnings(),
                                     decoration: const InputDecoration(
                                       border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(5),
-                                        ),
+                                        borderRadius: BorderRadius.all(Radius.circular(5)),
                                       ),
                                       // hintText: "50000",
                                       hintStyle: TextStyle(
@@ -812,6 +784,7 @@ class _dashbodyState extends State<dashbody> {
                             ),
 
                             const SizedBox(width: 16), // space between columns
+
                             // Second Column
                             Expanded(
                               child: Column(
@@ -819,10 +792,7 @@ class _dashbodyState extends State<dashbody> {
                                 children: [
                                   const Text(
                                     "Level 4",
-                                    style: TextStyle(
-                                      fontSize: 16.0,
-                                      color: Colors.black,
-                                    ),
+                                    style: TextStyle(fontSize: 16.0, color: Colors.black),
                                   ),
                                   const SizedBox(height: 6),
                                   TextField(
@@ -831,9 +801,7 @@ class _dashbodyState extends State<dashbody> {
                                     onChanged: (_) => calculateEarnings(),
                                     decoration: const InputDecoration(
                                       border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(5),
-                                        ),
+                                        borderRadius: BorderRadius.all(Radius.circular(5)),
                                       ),
                                       // hintText: "100",
                                       hintStyle: TextStyle(
@@ -862,10 +830,7 @@ class _dashbodyState extends State<dashbody> {
                                 children: [
                                   const Text(
                                     "Level 5",
-                                    style: TextStyle(
-                                      fontSize: 16.0,
-                                      color: Colors.black,
-                                    ),
+                                    style: TextStyle(fontSize: 16.0, color: Colors.black),
                                   ),
                                   const SizedBox(height: 6),
                                   SizedBox(
@@ -876,9 +841,7 @@ class _dashbodyState extends State<dashbody> {
                                       onChanged: (_) => calculateEarnings(),
                                       decoration: const InputDecoration(
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.all(
-                                            Radius.circular(5),
-                                          ),
+                                          borderRadius: BorderRadius.all(Radius.circular(5)),
                                         ),
                                         contentPadding: EdgeInsets.symmetric(
                                           vertical: 10,
@@ -902,36 +865,26 @@ class _dashbodyState extends State<dashbody> {
                                     visible: false,
                                     child: const Text(
                                       "Hidden",
-                                      style: TextStyle(
-                                        fontSize: 16.0,
-                                        color: Colors.black,
-                                      ),
+                                      style: TextStyle(fontSize: 16.0, color: Colors.black),
                                     ),
                                   ),
-                                  const SizedBox(
-                                    height: 25,
-                                  ), // 👈 match top spacing
+                                  const SizedBox(height: 25), // 👈 match top spacing
                                   SizedBox(
                                     height: 45,
-                                    width: 300, // 👈 same as TextField
+                                    width: 300,// 👈 same as TextField
                                     child: ElevatedButton.icon(
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.green,
                                         foregroundColor: Colors.white,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            5,
-                                          ),
+                                          borderRadius: BorderRadius.circular(5),
                                         ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 20,
-                                        ),
+                                        padding: const EdgeInsets.symmetric(horizontal: 20),
                                       ),
                                       onPressed: () {
                                         calculateEarnings(); // update values
                                         setState(() {
-                                          showEarnings =
-                                              true; // 👈 show box only after pressing button
+                                          showEarnings = true; // 👈 show box only after pressing button
                                         });
                                       },
                                       icon: Image.asset(
@@ -940,10 +893,7 @@ class _dashbodyState extends State<dashbody> {
                                         width: 15,
                                         color: Colors.white,
                                       ),
-                                      label: const Text(
-                                        "Calculate",
-                                        style: TextStyle(fontSize: 16.0),
-                                      ),
+                                      label: const Text("Calculate",style: TextStyle(fontSize: 16.0),),
                                     ),
                                   ),
                                 ],
@@ -983,153 +933,107 @@ class _dashbodyState extends State<dashbody> {
                                       const Text(
                                         "Estimated Earnigs",
                                         style: TextStyle(
-                                          color: Colors.green,
-                                          fontSize: 20.0,
+                                            color: Colors.green,
+                                            fontSize: 20.0,
                                         ),
                                       ),
                                     ],
                                   ),
-                                  SizedBox(height: 20.0),
+                                   SizedBox(height: 20.0),
                                   Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         "Level 1 Commission (10%)",
-                                        style: TextStyle(
-                                          color: Colors.green,
-                                          fontSize: 16.0,
-                                        ),
+                                        style: TextStyle(color: Colors.green, fontSize: 16.0),
                                       ),
                                       Text(
                                         " ₹${l1Earning.toStringAsFixed(0)}",
-                                        style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 16.0,
-                                        ),
+                                        style: TextStyle(color: Colors.black, fontSize: 16.0),
                                       ),
                                     ],
                                   ),
                                   SizedBox(height: 10.0),
                                   Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         "Level 2 Commission (2%)",
-                                        style: TextStyle(
-                                          color: Colors.green,
-                                          fontSize: 16.0,
-                                        ),
+                                        style: TextStyle(color: Colors.green, fontSize: 16.0),
                                       ),
                                       Text(
                                         " ₹${l2Earning.toStringAsFixed(0)}",
-                                        style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 16.0,
-                                        ),
+                                        style: TextStyle(color: Colors.black, fontSize: 16.0),
                                       ),
                                     ],
                                   ),
                                   SizedBox(height: 10.0),
                                   Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         "Level 3 Commission (1%)",
-                                        style: TextStyle(
-                                          color: Colors.green,
-                                          fontSize: 16.0,
-                                        ),
+                                        style: TextStyle(color: Colors.green, fontSize: 16.0),
                                       ),
                                       Text(
                                         "₹${l3Earning.toStringAsFixed(0)}",
-                                        style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 16.0,
-                                        ),
+                                        style: TextStyle(color: Colors.black, fontSize: 16.0),
                                       ),
                                     ],
                                   ),
                                   SizedBox(height: 10.0),
                                   Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         "Level 4 Commission (1%)",
-                                        style: TextStyle(
-                                          color: Colors.green,
-                                          fontSize: 16.0,
-                                        ),
+                                        style: TextStyle(color: Colors.green, fontSize: 16.0),
                                       ),
                                       Text(
                                         "₹${l4Earning.toStringAsFixed(0)}",
-                                        style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 16.0,
-                                        ),
+                                        style: TextStyle(color: Colors.black, fontSize: 16.0),
                                       ),
                                     ],
                                   ),
                                   SizedBox(height: 10.0),
                                   Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         "Level 5 Commission (1%)",
-                                        style: TextStyle(
-                                          color: Colors.green,
-                                          fontSize: 16.0,
-                                        ),
+                                        style: TextStyle(color: Colors.green, fontSize: 16.0),
                                       ),
                                       Text(
                                         "₹${l5Earning.toStringAsFixed(0)}",
-                                        style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 16.0,
-                                        ),
+                                        style: TextStyle(color: Colors.black, fontSize: 16.0),
                                       ),
                                     ],
                                   ),
                                   SizedBox(height: 10.0),
-                                  Divider(thickness: 0.3, color: Colors.grey),
+                                  Divider(
+                                    thickness: 0.3,
+                                    color: Colors.grey,
+                                  ),
                                   SizedBox(height: 10.0),
                                   Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             "Total Potential ",
-                                            style: TextStyle(
-                                              color: Colors.green,
-                                              fontSize: 20.0,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                            style: TextStyle(color: Colors.green, fontSize: 20.0,fontWeight: FontWeight.bold),
                                           ),
                                           Text(
                                             "Earnings",
-                                            style: TextStyle(
-                                              color: Colors.green,
-                                              fontSize: 20.0,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                            style: TextStyle(color: Colors.green, fontSize: 20.0,fontWeight: FontWeight.bold),
                                           ),
                                         ],
                                       ),
                                       Text(
                                         "₹${totalEarning.toStringAsFixed(0)}",
-                                        style: TextStyle(
-                                          color: Colors.green,
-                                          fontSize: 20.0,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        style: TextStyle(color: Colors.green, fontSize: 20.0,fontWeight: FontWeight.bold),
                                       ),
                                     ],
                                   ),
@@ -1137,11 +1041,16 @@ class _dashbodyState extends State<dashbody> {
                               ),
                             ),
                           ),
-                        ),
+                        )
+
+
+
                       ],
+
                     ),
                   ),
                 ),
+
               ],
             ),
           ),
@@ -1150,3 +1059,4 @@ class _dashbodyState extends State<dashbody> {
     );
   }
 }
+

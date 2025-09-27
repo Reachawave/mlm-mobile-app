@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:myprojects/adminpages/CommisionPayoutPage.dart';
-import 'package:myprojects/adminpages/ManageBranches.dart';
-import 'package:myprojects/adminpages/TotalVenturesPage.dart';
-import 'package:myprojects/adminpages/WithdrawalRequestPage.dart';
+import 'package:new_project/adminpages/CommisionPayoutPage.dart';
+import 'package:new_project/adminpages/ManageBranches.dart';
+import 'package:new_project/adminpages/TotalVenturesPage.dart';
+import 'package:new_project/adminpages/WithdrawalRequestPage.dart';
 
 import 'DashboardPage.dart';
 import 'ManageAgentsPage.dart';

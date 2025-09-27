@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:myprojects/adminpages/DashboardPage.dart';
-import 'package:myprojects/adminpages/LoginPage.dart';
+import 'package:new_project/adminpages/DashboardPage.dart';
+import 'package:new_project/adminpages/LoginPage.dart';
 
 void main() {
   runApp(const MyApp());

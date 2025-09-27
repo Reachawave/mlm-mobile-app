@@ -1,6 +1,6 @@
 {
-    "name": "myprojects",
-    "short_name": "myprojects",
+    "name": "new_project",
+    "short_name": "new_project",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

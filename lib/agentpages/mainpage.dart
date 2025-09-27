@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:myprojects/agentpages/withdrawpage.dart';
+import 'package:new_project/agentpages/withdrawpage.dart';
+import 'package:new_project/agentpages/withdrawpage.dart';
 
 import '../adminpages/CommisionPayoutPage.dart';
 import '../adminpages/DashboardPage.dart';
@@ -10,6 +11,7 @@ import '../adminpages/TotalVenturesPage.dart';
 import '../adminpages/WithdrawalRequestPage.dart';
 import '../agentpages/Agentdashboardpage.dart';
 import 'agentprofilepage.dart';
+import 'commisionReport.dart';
 import 'networkpage.dart';
 import 'notificationsPage.dart';
 
@@ -29,8 +31,10 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
     Agentdashboardpage(),
     MyNetworkPage(),
     withdrawpage(),
+    Commisionreport(),
     notifypage(),
     prifilepage(),
+
   ];
 
   @override
@@ -106,12 +110,12 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
                   DrawerMenuRow(
                     onTap: () {
                       Navigator.pop(context);
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (context) => Agentdashboardmainpage(initialIndex: 0), // 👈 Withdraw tab
-                      //   ),
-                      // );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Agentdashboardmainpage(initialIndex: 1), // 👈 Withdraw tab
+                        ),
+                      );
                     },
                     imagePath: "lib/icons/decision-tree.png",
                     title: "Network",
@@ -134,12 +138,12 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
                   DrawerMenuRow(
                     onTap: () {
                       Navigator.pop(context);
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (context) => Agentdashboardmainpage(initialIndex: 2), // 👈 Withdraw tab
-                      //   ),
-                      // );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Agentdashboardmainpage(initialIndex: 4), // 👈 Withdraw tab
+                        ),
+                      );
                     },
                     imagePath: "lib/icons/active.png",
                     title: "Notifications",
@@ -151,7 +155,7 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => Agentdashboardmainpage(
-                            initialIndex: 4,
+                            initialIndex: 5,
                           ), // 👈 Withdraw tab
                         ),
                       );
@@ -162,6 +166,14 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
                   DrawerMenuRow(
                     onTap: () {
                       Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Agentdashboardmainpage(
+                            initialIndex: 3,
+                          ), // 👈 Withdraw tab
+                        ),
+                      );
                     },
                     imagePath: "lib/icons/charts.png",
                     title: "Commission Report",
@@ -267,6 +279,21 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
             ),
             label: "Withdraw",
           ),
+          BottomNavigationBarItem(
+            icon: Image.asset(
+              "lib/icons/charts.png",
+              width: 24,
+              height: 24,
+              color: Colors.grey,
+            ),
+            activeIcon: Image.asset(
+              "lib/icons/charts.png",
+              width: 24,
+              height: 24,
+              color: Colors.green,
+            ),
+            label: "Commission",
+          ),
           const BottomNavigationBarItem(
             icon: Icon(Icons.notifications),
             label: "Notify",
@@ -275,6 +302,7 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
             icon: Icon(Icons.person),
             label: "Profile",
           ),
+
         ],
       ),
     );

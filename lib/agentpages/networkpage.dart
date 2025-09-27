@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'mainpage.dart';
+
 class MyNetworkPage extends StatefulWidget {
   const MyNetworkPage({super.key});
 
@@ -55,7 +57,12 @@ class _MyNetworkPageState extends State<MyNetworkPage> {
                   children: [
                     InkWell(
                       onTap: () {
-                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => Agentdashboardmainpage(initialIndex: 0), // 👈 Withdraw tab
+                          ),
+                        );
                       },
                       child: Container(
                         height: 45,

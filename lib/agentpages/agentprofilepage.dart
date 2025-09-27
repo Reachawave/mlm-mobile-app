@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'mainpage.dart';
+
 class prifilepage extends StatelessWidget {
   const prifilepage({super.key});
 
@@ -348,7 +350,12 @@ class _profilebodyState extends State<profilebody> {
                   children: [
                     InkWell(
                       onTap: () {
-                        Navigator.pop(context); // Go back to previous page
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => Agentdashboardmainpage(initialIndex: 0), // 👈 Withdraw tab
+                          ),
+                        );
                       },
                       child: Container(
                         height: 45,
