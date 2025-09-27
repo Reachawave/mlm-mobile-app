@@ -1,19 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:new_project/adminpages//ManageAgentsPage.dart';
-import 'package:new_project/adminpages/WithdrawalRequestPage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'DashboardPage.dart';
-import 'ManageBranches.dart';
-import 'TotalRevenuePage.dart';
-import 'TotalVenturesPage.dart';
+import 'package:new_project/utils/AuthApi.dart';
+import 'package:new_project/widgets/app_drawer.dart';
 
 class CommisionPayoutPage extends StatelessWidget {
   const CommisionPayoutPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(body: CommisionPayoutBody());
-  }
+  Widget build(BuildContext context) =>
+      const Scaffold(body: CommisionPayoutBody());
 }
 
 class CommisionPayoutBody extends StatefulWidget {
@@ -24,634 +20,475 @@ class CommisionPayoutBody extends StatefulWidget {
 }
 
 class _CommisionPayoutBodyState extends State<CommisionPayoutBody> {
+  AuthApi? _api;
+  bool _loading = true;
+  String? _error;
+
+  List<_WithdrawlRow> _rows = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _initApiAndLoad();
+  }
+
+  Future<void> _initApiAndLoad() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    final sp = await SharedPreferences.getInstance();
+    final token = sp.getString('token') ?? sp.getString('auth_token') ?? '';
+    if (token.isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'You are not logged in';
+      });
+      return;
+    }
+
+    _api = AuthApi(token: token);
+    await _loadWithdrawls();
+  }
+
+  Future<void> _loadWithdrawls() async {
+    try {
+      final resp = await _api!.getWithdrawlDetails();
+      final raw = (resp.data?['withdrawlDetails'] as List?) ?? [];
+
+      final rows = raw.map((e) => Map<String, dynamic>.from(e)).map((j) {
+        return _WithdrawlRow(
+          id: (j['id'] ?? 0) as int,
+          name: (j['name'] ?? '').toString(),
+          referalId: (j['referalId'] ?? '').toString(),
+          email: (j['email'] ?? '').toString(),
+          withdrawlAmount: (j['withdrawlAmount'] == null)
+              ? 0.0
+              : (j['withdrawlAmount'] as num).toDouble(),
+          status: (j['status'] ?? '').toString(),
+          raisedDateStr: (j['raisedDate'] ?? '').toString(),
+          paidDateStr: (j['paidDate'] ?? '').toString(),
+        );
+      }).toList();
+
+      // Newest first by raisedDate
+      rows.sort(
+        (a, b) => (b.raisedDate ?? DateTime.fromMillisecondsSinceEpoch(0))
+            .compareTo(a.raisedDate ?? DateTime.fromMillisecondsSinceEpoch(0)),
+      );
+
+      setState(() {
+        _rows = rows;
+        _loading = false;
+        _error = null;
+      });
+    } on ApiException catch (e) {
+      setState(() {
+        _loading = false;
+        _error = e.message;
+      });
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        _error = 'Failed to load payouts: $e';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, String>> data = [
-      {
-        "name": "chinnala tyuh",
-        "id": "svd-st-23",
-        "amount": "2,00,000",
-        "date": "1/08/2025",
-        "status": "Pending",
-      },
-      {
-        "name": "Sunitha Sharma",
-        "id": "svd-st-24",
-        "amount": "1,50,000",
-        "date": "5/08/2025",
-        "status": "Approved",
-      },
-      {
-        "name": "Ravi Kumar Chinnala",
-        "id": "svd-st-25",
-        "amount": "75,000",
-        "date": "10/08/2025",
-        "status": "Declined",
-      },
-      {
-        "name": "chinnala tyuh",
-        "id": "svd-st-23",
-        "amount": "2,00,000",
-        "date": "1/08/2025",
-        "status": "Pending",
-      },
-      {
-        "name": "Sunitha Sharma",
-        "id": "svd-st-24",
-        "amount": "1,50,000",
-        "date": "5/08/2025",
-        "status": "Approved",
-      },
-      {
-        "name": "Ravi Kumar Chinnala",
-        "id": "svd-st-25",
-        "amount": "75,000",
-        "date": "10/08/2025",
-        "status": "Declined",
-      },
-      // Add more rows as needed
-    ];
     return Scaffold(
       drawerEnableOpenDragGesture: false,
-      drawer: Drawer(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 30.0),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.close,
-                    color: Colors.black54,
-                    size: 18,
-                  ),
-                  onPressed: () {
-                    Navigator.pop(context); // Close drawer
-                  },
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 2),
-              child: Row(
-                children: [
-                  Icon(Icons.menu, color: Colors.green),
-                  SizedBox(width: 15),
-                  Text(
-                    "Sri Vayutej \nDevelopers",
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                children: [
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const Dashboardpage(),
-                        ),
-                      );
-                    },
-                    imagePath: "lib/icons/home.png",
-                    title: "Dashboard",
-                  ),
-
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ManageAgentPage(),
-                        ),
-                      );
-                    },
-                    icon: Icons.people_outlined,
-                    title: "Agents",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const TotalVenturesPage(),
-                        ),
-                      );
-                    },
-                    imagePath: "lib/icons/bag.png",
-                    title: "Ventures",
-                  ),
-
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ManageBranchesPage(),
-                        ),
-                      );
-                    },
-                    imagePath: "lib/icons/git.png",
-                    title: "Branches",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const TotalRevenuePage(),
-                        ),
-                      );
-                    },
-                    icon: Icons.account_balance_wallet_outlined,
-                    title: "Investments",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CommisionPayoutPage(),
-                        ),
-                      );
-                    },
-                    imagePath: "lib/icons/coins.png",
-                    title: "Payouts",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (context) => const TotalRevenuePage(),
-                      //   ),
-                      // );
-                    },
-                    imagePath: "lib/icons/decision-tree.png",
-                    title: "Referral Tree",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const Withdrawalrequestpage(),
-                        ),
-                      );
-                    },
-                    imagePath: "lib/icons/coins.png",
-                    title: "Withdrawals",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (context) => const TotalRevenuePage(),
-                      //   ),
-                      // );
-                    },
-                    imagePath: "lib/icons/charts.png",
-                    title: "Reports",
-                  ),
-                  SizedBox(height: 150),
-                  InkWell(
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 30),
-                      child: Row(
-                        children: [
-                          Container(
-                            height: 24,
-                            child: Image.asset(
-                              'lib/icons/back-arrow.png',
-                              color: Colors.green,
-                            ),
-                          ),
-                          SizedBox(width: 15),
-                          Text(
-                            "Go Back",
-                            style: TextStyle(fontSize: 16, color: Colors.green),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+      drawer: const AppDrawer(), // ✅ use unified sidebar
       appBar: AppBar(
         backgroundColor: Colors.white,
         leading: Padding(
-          padding: EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(8.0),
           child: Container(
-            height: 15,
             decoration: BoxDecoration(
-              border: Border.all(
-                color: Colors.black12, // Sets the color of the border
-                width: 1.0, // Sets the width of the border
-              ),
+              border: Border.all(color: Colors.black12),
+              borderRadius: BorderRadius.circular(10),
               color: Colors.white,
-              borderRadius: BorderRadius.circular(
-                10.0,
-              ), // Uniform radius for all corners
             ),
             child: Builder(
               builder: (context) => IconButton(
                 icon: const Icon(Icons.menu),
-                onPressed: () {
-                  Scaffold.of(context).openDrawer(); // 👈 open only by button
-                },
+                onPressed: () => Scaffold.of(context).openDrawer(),
               ),
             ),
           ),
         ),
-
         actions: [
-          Container(
-            height: 25,
-            child: Image.asset('lib/icons/active.png', color: Colors.black),
+          IconButton(
+            tooltip: 'Refresh',
+            onPressed: _loading ? null : _loadWithdrawls,
+            icon: const Icon(Icons.refresh, color: Colors.black87),
           ),
-          SizedBox(width: 10.0),
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Container(
-              height: 30,
-              child: Image.asset('lib/icons/user.png'),
-            ),
-          ),
+          const SizedBox(width: 4),
         ],
-        bottom: PreferredSize(
+        bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
-          child: Container(color: Colors.black12, height: 1.0),
+          child: Divider(height: 1, color: Colors.black12),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Container(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    InkWell(
-                      onTap: () {
-                        Navigator.pop(context); // Go back to previous page
-                      },
-                      child: Container(
-                        height: 45,
-                        width: 45,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black12, width: 1.0),
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(
-                            10.0,
-                          ), // Uniform radius for all corners
-                        ),
-                        child: Container(
-                          height: 8,
-                          child: Image.asset(
-                            'lib/icons/back-arrow.png',
-                            color: Colors.black,
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(_error!, textAlign: TextAlign.center),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadWithdrawls,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header row (back button + title)
+                      Row(
+                        children: [
+                          InkWell(
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              height: 45,
+                              width: 45,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.black12),
+                                borderRadius: BorderRadius.circular(10),
+                                color: Colors.white,
+                              ),
+                              child: Center(
+                                child: Image.asset(
+                                  'lib/icons/back-arrow.png',
+                                  color: Colors.black,
+                                  height: 18,
+                                ),
+                              ),
+                            ),
                           ),
+                          const SizedBox(width: 20),
+                          const Text(
+                            "Commission Payouts",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Card with table
+                      Container(
+                        width: 1000,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.black12, width: 1),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                      ),
-                    ),
-                    SizedBox(width: 20.0),
-                    Text(
-                      "Commission Payouts",
-                      style: TextStyle(
-                        fontSize: 24.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 30.0),
-                Container(
-                  width: 1000,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black12, width: 1.0),
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(
-                      10.0,
-                    ), // Uniform radius for all corners
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              height: 24.0,
-                              child: Image.asset(
-                                "lib/icons/coins.png",
+                        child: Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Image.asset(
+                                    "lib/icons/coins.png",
+                                    height: 24,
+                                    color: Colors.green,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  const Text(
+                                    "Payout History",
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Text(
+                                "A complete log of all agent withdrawal requests",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.green,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
+                              // Header row
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0,
+                                  vertical: 6,
+                                ),
+                                child: Row(
+                                  children: const [
+                                    Expanded(
+                                      flex: 3,
+                                      child: Text(
+                                        "Agent",
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        "Amount",
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        "Date",
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        "Status",
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Divider(
+                                thickness: 0.3,
                                 color: Colors.green,
                               ),
-                            ),
-                            SizedBox(width: 10.0),
-                            Text(
-                              "Payout History",
-                              style: TextStyle(
-                                fontSize: 22.0,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          "A complete log of all agent withdrawal requests",
-                          style: TextStyle(fontSize: 14.0, color: Colors.green),
-                        ),
-                        SizedBox(height: 30.0),
-                        Padding(
-                          padding: const EdgeInsets.all(10.0),
-                          child: Row(
-                            children: [
-                              Text(
-                                "Agent",
-                                style: TextStyle(
-                                  fontSize: 14.0,
-                                  color: Colors.green,
-                                ),
-                              ),
-                              SizedBox(width: 40.0),
-                              Text(
-                                "Amount",
-                                style: TextStyle(
-                                  fontSize: 14.0,
-                                  color: Colors.green,
-                                ),
-                              ),
-                              SizedBox(width: 22.0),
-                              Text(
-                                "Date",
-                                style: TextStyle(
-                                  fontSize: 14.0,
-                                  color: Colors.green,
-                                ),
-                              ),
-                              SizedBox(width: 50.0),
-                              Text(
-                                "Status",
-                                style: TextStyle(
-                                  fontSize: 14.0,
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 3.0),
-                        // Divider(thickness: 0.3, color: Colors.green),
-                        ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: data.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            final item = data[index];
-                            final name = item["name"]!;
-                            final id = item["id"]!;
-                            final amount = item["amount"]!;
-                            final date = item["date"]!;
-                            final status = item["status"]!;
 
-                            return Column(
-                              children: [
-                                const Divider(
+                              // Rows
+                              ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: _rows.length,
+                                separatorBuilder: (_, __) => const Divider(
                                   thickness: 0.3,
                                   color: Colors.green,
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // Name + ID column (auto-wrap)
-                                      Expanded(
-                                        flex: 2,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              name,
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.black,
+                                itemBuilder: (context, i) {
+                                  final r = _rows[i];
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8.0,
+                                      vertical: 10,
+                                    ),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        // Agent
+                                        Expanded(
+                                          flex: 3,
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                r.name,
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.black,
+                                                ),
                                               ),
-                                              softWrap: true,
-                                              overflow: TextOverflow.visible,
-                                              maxLines: null,
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              id,
-                                              style: const TextStyle(
-                                                fontSize: 10,
-                                                color: Colors.green,
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                r.referalId,
+                                                style: const TextStyle(
+                                                  fontSize: 10,
+                                                  color: Colors.green,
+                                                ),
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
-                                      ),
 
-                                      const SizedBox(width: 12),
-
-                                      // Amount column
-                                      Expanded(
-                                        flex: 2,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              amount,
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.black,
-                                              ),
+                                        // Amount
+                                        Expanded(
+                                          flex: 2,
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: 6,
                                             ),
-                                          ],
-                                        ),
-                                      ),
-
-                                      // Date column
-                                      Expanded(
-                                        flex: 2,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              date,
+                                            child: Text(
+                                              _fmtCurrency(r.withdrawlAmount),
                                               style: const TextStyle(
                                                 fontSize: 12,
                                                 color: Colors.black,
                                               ),
                                             ),
-                                          ],
+                                          ),
                                         ),
-                                      ),
-                                      SizedBox(width: 10.0),
-                                      // Status column (pill-shaped container)
-                                      Expanded(
-                                        flex: 2,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            const SizedBox(height: 8),
-                                            Container(
+
+                                        // Date
+                                        Expanded(
+                                          flex: 2,
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: 6,
+                                            ),
+                                            child: Text(
+                                              r.raisedDate != null
+                                                  ? _fmtDate(r.raisedDate!)
+                                                  : '-',
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.black,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        // Status (pill)
+                                        Expanded(
+                                          flex: 2,
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: 2,
+                                            ),
+                                            child: Container(
                                               padding:
                                                   const EdgeInsets.symmetric(
                                                     horizontal: 12,
                                                     vertical: 6,
                                                   ),
                                               decoration: BoxDecoration(
-                                                color: getStatusContainerColor(
-                                                  status,
-                                                ),
+                                                color: _statusBg(r.status),
                                                 borderRadius:
-                                                    BorderRadius.circular(
-                                                      50,
-                                                    ), // pill shape
+                                                    BorderRadius.circular(50),
                                               ),
                                               child: Text(
-                                                status,
+                                                r.status.isEmpty
+                                                    ? '-'
+                                                    : r.status,
+                                                textAlign: TextAlign.center,
                                                 style: TextStyle(
                                                   fontSize: 10,
                                                   fontWeight: FontWeight.w600,
-                                                  color: getStatusTextColor(
-                                                    status,
-                                                  ),
+                                                  color: _statusFg(r.status),
                                                 ),
                                               ),
                                             ),
-                                          ],
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
-}
 
-class DrawerMenuRow extends StatelessWidget {
-  final IconData? icon; // optional icon
-  final String? imagePath; // optional image
-  final String title;
-  final VoidCallback? onTap; // <-- add this
-
-  const DrawerMenuRow({
-    super.key,
-    this.icon,
-    this.imagePath,
-    required this.title,
-    this.onTap, // <-- accept callback
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    Widget leadingWidget;
-
-    if (imagePath != null) {
-      leadingWidget = Image.asset(
-        imagePath!,
-        width: 24,
-        height: 24,
-        color: Colors.green,
-      );
-    } else if (icon != null) {
-      leadingWidget = Icon(icon, color: Colors.green);
-    } else {
-      leadingWidget = const SizedBox(width: 24, height: 24);
+  // --------------- UI helpers ---------------
+  Color _statusBg(String status) {
+    switch (status.toLowerCase()) {
+      case 'approved':
+        return Colors.green;
+      case 'declined':
+        return Colors.red;
+      case 'pending':
+        return Colors.grey;
+      default:
+        return Colors.grey.shade300;
     }
+  }
 
-    return InkWell(
-      onTap: onTap, // <-- call the callback
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-        child: Row(
-          children: [
-            leadingWidget,
-            const SizedBox(width: 15),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 20, color: Colors.green),
-            ),
-          ],
-        ),
-      ),
-    );
+  Color _statusFg(String status) {
+    switch (status.toLowerCase()) {
+      case 'approved':
+      case 'declined':
+        return Colors.white;
+      case 'pending':
+        return Colors.black;
+      default:
+        return Colors.black;
+    }
+  }
+
+  String _fmtCurrency(double v) {
+    final str = v.toStringAsFixed(v.truncateToDouble() == v ? 0 : 2);
+    return '₹ $str';
+  }
+
+  String _fmtDate(DateTime d) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${d.day.toString().padLeft(2, '0')} ${months[d.month - 1]} ${d.year}';
   }
 }
 
-// Helper to get background color
-Color getStatusContainerColor(String status) {
-  switch (status.toLowerCase()) {
-    case "approved":
-      return Colors.green;
-    case "declined":
-      return Colors.red;
-    case "pending":
-      return Colors.grey;
-    default:
-      return Colors.grey.shade300;
-  }
-}
+// --------- local view model ----------
+class _WithdrawlRow {
+  final int id;
+  final String name;
+  final String referalId;
+  final String email;
+  final double withdrawlAmount;
+  final String status;
+  final String raisedDateStr; // e.g. "2025-09-27"
+  final String paidDateStr;
 
-// Helper to get text color
-Color getStatusTextColor(String status) {
-  switch (status.toLowerCase()) {
-    case "approved":
-    case "declined":
-      return Colors.white;
-    case "pending":
-      return Colors.black;
-    default:
-      return Colors.black;
+  DateTime? get raisedDate {
+    try {
+      return DateTime.tryParse(raisedDateStr);
+    } catch (_) {
+      return null;
+    }
   }
+
+  _WithdrawlRow({
+    required this.id,
+    required this.name,
+    required this.referalId,
+    required this.email,
+    required this.withdrawlAmount,
+    required this.status,
+    required this.raisedDateStr,
+    required this.paidDateStr,
+  });
 }

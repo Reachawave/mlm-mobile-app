@@ -40,7 +40,7 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
   @override
   void initState() {
     super.initState();
-    _selectedIndex = widget.initialIndex; // 👈 Start from passed index
+    _selectedIndex = widget.initialIndex;
   }
 
   void _onTabTapped(int index) {
