@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:new_project/auth/Login.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: 'RedRose'),
-      home: Loginpage(),
+      home: const Loginpage(),
     );
   }
 }

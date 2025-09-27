@@ -39,7 +39,7 @@ class AuthApi {
       scheme: base.scheme,
       host: base.host,
       port: base.hasPort ? base.port : null,
-      path: path, // e.g. "public/login"
+      path: path,
     );
   }
 
