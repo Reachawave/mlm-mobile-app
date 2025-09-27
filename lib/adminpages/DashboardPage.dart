@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:new_project/adminpages/ReferrelPage.dart';
 import 'package:new_project/utils/AuthApi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
+
 import 'package:new_project/widgets/app_drawer.dart';
 import 'ManageAgentsPage.dart';
 import 'TotalVenturesPage.dart';
@@ -19,9 +21,7 @@ class Dashboardpage extends StatelessWidget {
   const Dashboardpage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const Scaffold(body: DashboardBody());
-  }
+  Widget build(BuildContext context) => const Scaffold(body: DashboardBody());
 }
 
 class DashboardBody extends StatefulWidget {
@@ -32,62 +32,124 @@ class DashboardBody extends StatefulWidget {
 }
 
 class _DashboardBodyState extends State<DashboardBody> {
+  // ---- API & Totals ----
   final AuthApi _authApi = AuthApi();
+  bool _loadingTotals = true;
+  String? _totalsError;
 
-  // Date range picker overlay
+  int _totalAgents = 0;
+  double _totalCommission = 0;
+  int _totalVentures = 0;
+  int _totalBranches = 0;
+  int _totalPendingWithdrawals = 0;
+  double _totalRevenue = 0;
+
+  // ---- Date Range overlay ----
   String _selectedDateText = "pick a date range";
   final GlobalKey _fieldKey = GlobalKey();
   OverlayEntry? _overlayEntry;
 
-  // DATE RANGE: handle selection
-  void _onSelectionChanged(DateRangePickerSelectionChangedArgs args) {
-    if (args.value is PickerDateRange) {
-      final DateTime? start = args.value.startDate;
-      final DateTime? endNullable = args.value.endDate ?? start;
+  @override
+  void initState() {
+    super.initState();
+    _fetchTotals();
+  }
 
-      if (start != null && endNullable != null) {
-        final now = DateTime.now();
-        final end = endNullable.isAfter(now) ? now : endNullable;
+  Future<void> _fetchTotals() async {
+    setState(() {
+      _loadingTotals = true;
+      _totalsError = null;
+    });
 
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final token = sp.getString('auth_token') ?? sp.getString('token') ?? '';
+      if (token.isEmpty) {
         setState(() {
-          if (start.year == end.year &&
-              start.month == end.month &&
-              start.day == end.day) {
-            _selectedDateText = DateFormat("dd MMMM yyyy").format(start);
-          } else {
-            _selectedDateText =
-                "${DateFormat('dd MMM yyyy').format(start)} → ${DateFormat('dd MMM yyyy').format(end)}";
-          }
+          _loadingTotals = false;
+          _totalsError = 'You are not logged in';
         });
+        return;
       }
+      _authApi.setAuthToken(token);
+
+      final resp = await _authApi.getAgentDashboard();
+      final td = (resp.data?['treeDetails'] as Map?) ?? {};
+
+      setState(() {
+        _totalAgents = (td['totalAgents'] ?? 0) as int;
+        _totalCommission = (td['totalCommision'] ?? 0).toDouble();
+        _totalVentures = (td['totalVentures'] ?? 0) as int;
+        _totalBranches = (td['totalBranch'] ?? 0) as int;
+        _totalPendingWithdrawals = (td['totalPendingWithdrawls'] ?? 0) as int;
+        _totalRevenue = (td['totalRevenue'] ?? 0).toDouble();
+        _loadingTotals = false;
+      });
+    } on ApiException catch (e) {
+      setState(() {
+        _loadingTotals = false;
+        _totalsError = e.message;
+      });
+    } catch (e) {
+      setState(() {
+        _loadingTotals = false;
+        _totalsError = 'Failed to load dashboard: $e';
+      });
     }
   }
 
-  // Show popup calendar under the field
+  // ---- Date Range handling ----
+  void _onSelectionChanged(DateRangePickerSelectionChangedArgs args) {
+    if (args.value is! PickerDateRange) return;
+    final range = args.value as PickerDateRange;
+
+    final start = range.startDate;
+    final end0 = range.endDate ?? start;
+    if (start == null || end0 == null) return;
+
+    final now = DateTime.now();
+    final end = end0.isAfter(now) ? now : end0;
+
+    setState(() {
+      if (start.year == end.year &&
+          start.month == end.month &&
+          start.day == end.day) {
+        _selectedDateText = DateFormat("dd MMMM yyyy").format(start);
+      } else {
+        _selectedDateText =
+            "${DateFormat('dd MMM yyyy').format(start)} → ${DateFormat('dd MMM yyyy').format(end)}";
+      }
+    });
+  }
+
   void _showCalendar(BuildContext context) {
     if (_overlayEntry != null) return;
     if (_fieldKey.currentContext == null) return;
 
     final renderBox = _fieldKey.currentContext!.findRenderObject() as RenderBox;
-    final position = renderBox.localToGlobal(Offset.zero);
+    final pos = renderBox.localToGlobal(Offset.zero);
     final size = renderBox.size;
     final now = DateTime.now();
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    const overlayWidth = 320.0;
+    final left = (pos.dx + overlayWidth > screenWidth)
+        ? (screenWidth - overlayWidth - 8)
+        : pos.dx;
 
     _overlayEntry = OverlayEntry(
       builder: (context) => Stack(
         children: [
-          // tap outside to close
           Positioned.fill(
             child: GestureDetector(
               onTap: _removeOverlay,
               behavior: HitTestBehavior.translucent,
             ),
           ),
-          // calendar
           Positioned(
-            top: position.dy + size.height + 5,
-            left: position.dx,
-            width: 320,
+            top: pos.dy + size.height + 5,
+            left: left,
+            width: overlayWidth,
             child: Material(
               elevation: 6,
               borderRadius: BorderRadius.circular(8),
@@ -114,7 +176,6 @@ class _DashboardBodyState extends State<DashboardBody> {
         ],
       ),
     );
-
     Overlay.of(context).insert(_overlayEntry!);
   }
 
@@ -183,29 +244,24 @@ class _DashboardBodyState extends State<DashboardBody> {
             const SizedBox(height: 12),
 
             // Time quick filters
-            Row(
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
               children: [
                 _timeChip("Today"),
-                const SizedBox(width: 10),
                 _timeChip("This Week"),
-                const SizedBox(width: 10),
                 _timeChip("This Month"),
+                _timeChip("All Time"),
               ],
             ),
-            const SizedBox(height: 10),
-            _timeChip("All Time"),
             const SizedBox(height: 10),
 
             // Date range input with overlay
             GestureDetector(
               key: _fieldKey,
-              onTap: () {
-                if (_overlayEntry == null) {
-                  _showCalendar(context);
-                } else {
-                  _removeOverlay();
-                }
-              },
+              onTap: () => _overlayEntry == null
+                  ? _showCalendar(context)
+                  : _removeOverlay(),
               child: Container(
                 height: 55,
                 padding: const EdgeInsets.symmetric(
@@ -224,7 +280,7 @@ class _DashboardBodyState extends State<DashboardBody> {
                       child: Text(
                         _selectedDateText,
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           color: _selectedDateText == "pick a date range"
                               ? Colors.grey
                               : Colors.black,
@@ -236,463 +292,336 @@ class _DashboardBodyState extends State<DashboardBody> {
               ),
             ),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: 16),
 
-            // ROW 1
-            Row(
-              children: [
-                // TOTAL REVENUE
-                _metricCard(
-                  height: 200,
-                  width: 175,
-                  color: const Color(0xFF4A9782),
-                  leading: const Icon(
-                    Icons.account_balance_wallet_outlined,
-                    size: 40,
-                    color: Colors.white,
-                  ),
-                  title: "TOTAL REVENUE",
-                  bigValueRow: Row(
-                    children: const [
-                      Icon(
-                        Icons.currency_rupee_outlined,
-                        size: 30,
-                        color: Colors.white,
-                      ),
-                      Text(
-                        "17,00,000",
-                        style: TextStyle(
+            // Metrics: loading / error / fixed-height 2-col grid
+            if (_loadingTotals)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (_totalsError != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  _totalsError!,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              )
+            else
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2, // two cards per row
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  mainAxisExtent:
+                      205, // ↑ bump height to eliminate 20px overflow
+                ),
+                itemCount: 8,
+                itemBuilder: (context, index) {
+                  switch (index) {
+                    case 0:
+                      return _metricCard(
+                        color: const Color(0xFF4A9782),
+                        leading: const Icon(
+                          Icons.account_balance_wallet_outlined,
+                          size: 40,
                           color: Colors.white,
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
                         ),
-                      ),
-                    ],
-                  ),
-                  footer: const Text(
-                    "20 investments",
-                    style: TextStyle(color: Colors.white, fontSize: 14),
-                  ),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const TotalRevenuePage()),
-                  ),
-                ),
-                const SizedBox(width: 10),
-
-                // COMMISSION PAID
-                _metricCard(
-                  height: 200,
-                  width: 175,
-                  color: const Color(0xFFD92C54),
-                  leading: SizedBox(
-                    height: 40,
-                    child: Image.asset(
-                      'lib/icons/coins.png',
-                      color: Colors.white,
-                    ),
-                  ),
-                  title: "COMMISSION PAID",
-                  bigValueRow: Row(
-                    children: const [
-                      Icon(
-                        Icons.currency_rupee_outlined,
-                        size: 30,
-                        color: Colors.white,
-                      ),
-                      Text(
-                        "1,91,000",
-                        style: TextStyle(
+                        title: "TOTAL REVENUE",
+                        bigValue: _moneyText(_totalRevenue),
+                        footer: Text(
+                          "$_totalVentures ventures",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TotalRevenuePage(),
+                          ),
+                        ),
+                      );
+                    case 1:
+                      return _metricCard(
+                        color: const Color(0xFFD92C54),
+                        leading: SizedBox(
+                          height: 40,
+                          child: Image.asset(
+                            'lib/icons/coins.png',
+                            color: Colors.white,
+                          ),
+                        ),
+                        title: "COMMISSION PAID",
+                        bigValue: _moneyText(_totalCommission),
+                        footer: const Text(
+                          "Paid to agent network",
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const CommisionPayoutPage(),
+                          ),
+                        ),
+                      );
+                    case 2:
+                      return _metricCard(
+                        color: const Color(0xFFB13BFF),
+                        leading: const Icon(
+                          Icons.people_outlined,
+                          size: 40,
                           color: Colors.white,
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
                         ),
-                      ),
-                    ],
-                  ),
-                  footer: const Text(
-                    "Paid to agent network",
-                    style: TextStyle(color: Colors.white, fontSize: 14),
-                  ),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const CommisionPayoutPage(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-            // ROW 2
-            Row(
-              children: [
-                // NET WORTH
-                _metricCard(
-                  height: 200,
-                  width: 175,
-                  color: const Color(0xFF3D74B6),
-                  leading: SizedBox(
-                    height: 40,
-                    child: Image.asset(
-                      'lib/icons/text.png',
-                      color: Colors.white,
-                    ),
-                  ),
-                  title: "NET WORTH",
-                  bigValueRow: Row(
-                    children: const [
-                      Icon(
-                        Icons.currency_rupee_outlined,
-                        size: 30,
-                        color: Colors.white,
-                      ),
-                      Text(
-                        "15,00,000",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
+                        title: "TOTAL AGENTS",
+                        bigValue: _countText(_totalAgents),
+                        footer: const Text(
+                          "All registered agents",
+                          style: TextStyle(color: Colors.white, fontSize: 12),
                         ),
-                      ),
-                    ],
-                  ),
-                  footer: const Text(
-                    "Revenue - Commissions",
-                    style: TextStyle(color: Colors.white, fontSize: 14),
-                  ),
-                  onTap:
-                      () {}, // no-op (or navigate to a net-worth details page)
-                ),
-                const SizedBox(width: 10),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ManageAgentPage(),
+                          ),
+                        ),
+                      );
+                    case 3:
+                      return _metricCard(
+                        color: const Color(0xFFD92C54),
+                        leading: SizedBox(
+                          height: 40,
+                          child: Image.asset(
+                            'lib/icons/bag.png',
+                            color: Colors.white,
+                          ),
+                        ),
+                        title: "TOTAL VENTURES",
+                        bigValue: _countText(_totalVentures),
+                        footer: const Text(
+                          "Ready for investment",
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TotalVenturesPage(),
+                          ),
+                        ),
+                      );
+                    case 4:
+                      return _metricCard(
+                        color: const Color(0xFFFFD66B),
+                        leading: SizedBox(
+                          height: 40,
+                          child: Image.asset(
+                            'lib/icons/bank.png',
+                            color: Colors.white,
+                          ),
+                        ),
+                        title: "TOTAL BRANCHES",
+                        bigValue: _countText(_totalBranches),
+                        footer: const Text(
+                          "Across the organization",
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ManageBranchesPage(),
+                          ),
+                        ),
+                      );
+                    case 5:
+                      return _metricCard(
+                        color: const Color(0xFF67AE6E),
+                        leading: SizedBox(
+                          height: 40,
+                          child: Image.asset(
+                            'lib/icons/decision-tree.png',
+                            color: Colors.white,
+                          ),
+                        ),
+                        title: "REFERRAL TREE",
+                        bigValue: _twoLineBigValue("VIEW", "NETWORK"),
+                        footer: const Text(
+                          "Complete agent hierarchy",
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ReferralPage(),
+                          ),
+                        ),
+                      );
+                    case 6:
+                      return _metricCard(
+                        color: const Color(0xFF3D74B6),
+                        leading: SizedBox(
+                          height: 40,
+                          child: Image.asset(
+                            'lib/icons/pig.png',
+                            color: Colors.white,
+                          ),
+                        ),
+                        title: "WITHDRAWAL REQUESTS",
+                        bigValue: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                '$_totalPendingWithdrawals',
+                                maxLines: 1,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            const Text(
+                              "Pending",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        footer: const Text(
+                          "Approve agent payouts",
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const Withdrawalrequestpage(),
+                          ),
+                        ),
+                      );
+                    default:
+                      return _metricCard(
+                        color: const Color(0xFF5C7285),
+                        leading: SizedBox(
+                          height: 40,
+                          child: Image.asset(
+                            'lib/icons/charts.png',
+                            color: Colors.white,
+                          ),
+                        ),
+                        title: "REPORTS",
+                        bigValue: _twoLineBigValue("VIEW &", "EXPORT"),
+                        footer: const Text(
+                          "Download detailed reports",
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => Reportspage()),
+                        ),
+                      );
+                  }
+                },
+              ),
 
-                // TOTAL AGENTS
-                _metricCard(
-                  height: 200,
-                  width: 175,
-                  color: const Color(0xFFB13BFF),
-                  leading: const Icon(
-                    Icons.people_outlined,
-                    size: 40,
-                    color: Colors.white,
-                  ),
-                  title: "TOTAL AGENTS",
-                  bigValue: const Text(
-                    "34",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  footer: const Text(
-                    "All registered agents",
-                    style: TextStyle(color: Colors.white, fontSize: 14),
-                  ),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ManageAgentPage()),
-                  ),
-                ),
-              ],
-            ),
+            const SizedBox(height: 24),
 
-            const SizedBox(height: 10),
-
-            // ROW 3
-            Row(
+            // QUICK ACTIONS
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
               children: [
-                // TOTAL VENTURES
-                _metricCard(
-                  height: 200,
-                  width: 175,
-                  color: const Color(0xFFD92C54),
-                  leading: SizedBox(
-                    height: 40,
-                    child: Image.asset(
-                      'lib/icons/bag.png',
-                      color: Colors.white,
-                    ),
-                  ),
-                  title: "TOTAL VENTURES",
-                  bigValue: const Text(
-                    "4",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  footer: const Text(
-                    "Ready for investment",
-                    style: TextStyle(color: Colors.white, fontSize: 14),
-                  ),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const TotalVenturesPage(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-
-                // TOTAL BRANCHES
-                _metricCard(
-                  height: 200,
-                  width: 175,
-                  color: const Color(0xFFFFD66B),
-                  leading: SizedBox(
-                    height: 40,
-                    child: Image.asset(
-                      'lib/icons/bank.png',
-                      color: Colors.white,
-                    ),
-                  ),
-                  title: "TOTAL BRANCHES",
-                  bigValue: const Text(
-                    "2",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  footer: const Text(
-                    "Across the organization",
-                    style: TextStyle(color: Colors.white, fontSize: 14),
-                  ),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ManageBranchesPage(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-            // ROW 4
-            Row(
-              children: [
-                // REFERRAL TREE
-                _metricCard(
-                  width: 175,
-                  color: const Color(0xFF67AE6E),
-                  leading: SizedBox(
-                    height: 40,
-                    child: Image.asset(
-                      'lib/icons/decision-tree.png',
-                      color: Colors.white,
-                    ),
-                  ),
-                  title: "REFERRAL TREE",
-                  bigValueColumn: const [
-                    Text(
-                      "VIEW",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
+                _quickAction(
+                  iconPath: 'lib/icons/add-friend.png',
+                  label: 'Create Agent',
+                  iconHeight: 25,
+                  onTap: () async {
+                    final sp = await SharedPreferences.getInstance();
+                    final token =
+                        sp.getString('auth_token') ??
+                        sp.getString('token') ??
+                        '';
+                    if (token.isEmpty) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('You are not logged in')),
+                      );
+                      return;
+                    }
+                    _authApi.setAuthToken(token);
+                    if (!mounted) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CreateAgentPage(api: _authApi),
                       ),
-                    ),
-                    Text(
-                      "NETWORK",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-
-                  footer: const Text(
-                    "Complete agent hierarchy",
-                    style: TextStyle(color: Colors.white, fontSize: 14),
-                  ),
-                  onTap: () {
-                    // TODO: navigate to referral tree page when ready
+                    );
                   },
                 ),
-                const SizedBox(width: 10),
-
-                // WITHDRAWAL REQUESTS
-                _metricCard(
-                  width: 175,
-                  color: const Color(0xFF3D74B6),
-                  leading: SizedBox(
-                    height: 40,
-                    child: Image.asset(
-                      'lib/icons/pig.png',
-                      color: Colors.white,
-                    ),
-                  ),
-                  titleColumn: const [
-                    Text(
-                      "WITHDRAWAL",
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                    Text(
-                      "REQUESTS",
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                  ],
-                  bigValueColumn: const [
-                    Text(
-                      "2",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
+                _quickAction(
+                  iconPath: 'lib/icons/add.png',
+                  label: 'Create Venture',
+                  iconHeight: 20,
+                  onTap: () async {
+                    final sp = await SharedPreferences.getInstance();
+                    final token =
+                        sp.getString('auth_token') ??
+                        sp.getString('token') ??
+                        '';
+                    if (token.isEmpty) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('You are not logged in')),
+                      );
+                      return;
+                    }
+                    _authApi.setAuthToken(token);
+                    if (!mounted) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CreateVenturePage(api: _authApi),
                       ),
-                    ),
-                    Text(
-                      "Pending",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
+                    );
+                  },
+                ),
+                _quickAction(
+                  iconPath: 'lib/icons/git.png',
+                  label: 'Create Branch',
+                  iconHeight: 30,
+                  onTap: () async {
+                    final sp = await SharedPreferences.getInstance();
+                    final token =
+                        sp.getString('auth_token') ??
+                        sp.getString('token') ??
+                        '';
+                    if (token.isEmpty) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('You are not logged in')),
+                      );
+                      return;
+                    }
+                    _authApi.setAuthToken(token);
+                    if (!mounted) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CreateBranchPage(api: _authApi),
                       ),
-                    ),
-                  ],
-                  footer: const Text(
-                    "Approve agent payouts",
-                    style: TextStyle(color: Colors.white, fontSize: 14),
-                  ),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const Withdrawalrequestpage(),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ],
-            ),
-
-            const SizedBox(height: 10),
-
-            // REPORTS
-            _metricCard(
-              width: 175,
-              color: const Color(0xFF5C7285),
-              leading: SizedBox(
-                height: 40,
-                child: Image.asset('lib/icons/charts.png', color: Colors.white),
-              ),
-              title: "REPORTS",
-              bigValueColumn: const [
-                Text(
-                  "VIEW &",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  "EXPORT",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-              footer: const Text(
-                "Download detailed reports",
-                style: TextStyle(color: Colors.white, fontSize: 14),
-              ),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => Reportspage()),
-              ),
-            ),
-
-            const SizedBox(height: 40),
-
-            // QUICK ACTIONS: Create Agent / Venture / Branch
-            _quickAction(
-              iconPath: 'lib/icons/add-friend.png',
-              label: 'Create Agent',
-              iconHeight: 25,
-              onTap: () async {
-                final sp = await SharedPreferences.getInstance();
-                final token =
-                    sp.getString('auth_token') ?? sp.getString('token') ?? '';
-                if (token.isEmpty) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('You are not logged in')),
-                  );
-                  return;
-                }
-                _authApi.setAuthToken(token);
-                if (!mounted) return;
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CreateAgentPage(api: _authApi),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-            _quickAction(
-              iconPath: 'lib/icons/add.png',
-              label: 'Create Venture',
-              iconHeight: 20,
-              onTap: () async {
-                final sp = await SharedPreferences.getInstance();
-                final token =
-                    sp.getString('auth_token') ?? sp.getString('token') ?? '';
-                if (token.isEmpty) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('You are not logged in')),
-                  );
-                  return;
-                }
-                _authApi.setAuthToken(token);
-                if (!mounted) return;
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CreateVenturePage(api: _authApi),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-            _quickAction(
-              iconPath: 'lib/icons/git.png',
-              label: 'Create Branch',
-              iconHeight: 30,
-              onTap: () async {
-                // Get saved token (adjust the key to match your login save)
-                final sp = await SharedPreferences.getInstance();
-                final savedToken = sp.getString('token') ?? '';
-
-                if (savedToken.isEmpty) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('You are not logged in')),
-                  );
-                  return;
-                }
-
-                // Set token on the API and navigate
-                _authApi.setAuthToken(savedToken);
-                if (!mounted) return;
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CreateBranchPage(api: _authApi),
-                  ),
-                );
-              },
             ),
           ],
         ),
@@ -700,86 +629,127 @@ class _DashboardBodyState extends State<DashboardBody> {
     );
   }
 
-  // Small helper to render "chips" like Today / This Week / ...
-  Widget _timeChip(String text) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.black12, width: 1),
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Text(text, style: const TextStyle(fontSize: 16)),
-      ),
-    );
-  }
+  // ---- UI helpers ----
+  Widget _timeChip(String text) => Container(
+    decoration: BoxDecoration(
+      border: Border.all(color: Colors.black12, width: 1),
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(10),
+    ),
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+    child: Text(text, style: const TextStyle(fontSize: 14)),
+  );
 
-  // Reusable metric card
+  // Money value with rupee icon + shrink-to-fit
+  Widget _moneyText(num amount) => Row(
+    children: [
+      const Icon(Icons.currency_rupee_outlined, size: 24, color: Colors.white),
+      const SizedBox(width: 2),
+      Expanded(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            _fmtINR(amount).replaceFirst('₹', ''),
+            maxLines: 1,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
+
+  // Big count with shrink-to-fit
+  Widget _countText(int value) => FittedBox(
+    fit: BoxFit.scaleDown,
+    alignment: Alignment.centerLeft,
+    child: Text(
+      '$value',
+      maxLines: 1,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 26,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  );
+
+  // Two-line big value (auto-shrinks as a group)
+  Widget _twoLineBigValue(String a, String b) => Expanded(
+    child: Align(
+      alignment: Alignment.topLeft,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.topLeft,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              a,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              b,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
   Widget _metricCard({
-    double? height,
-    double? width,
     required Color color,
+    required String title,
     Widget? leading,
-    String? title,
-    List<Widget>? titleColumn,
-    Widget? bigValue,
-    Widget? bigValueRow,
-    List<Widget>? bigValueColumn,
+    required Widget bigValue,
     Widget? footer,
     VoidCallback? onTap,
   }) {
-    final titleWidget = title != null
-        ? Text(title, style: const TextStyle(color: Colors.white, fontSize: 16))
-        : (titleColumn != null
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: titleColumn,
-                )
-              : const SizedBox.shrink());
-
-    final valueWidget =
-        bigValue ??
-        bigValueRow ??
-        (bigValueColumn != null
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: bigValueColumn,
-              )
-            : const SizedBox(height: 0));
-
     return InkWell(
       onTap: onTap,
-      child: SizedBox(
-        height: height,
-        width: width,
-        child: Card(
-          color: color,
-          elevation: 5,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (leading != null) leading,
-                const SizedBox(height: 8),
-                titleWidget,
-                const SizedBox(height: 8),
-                valueWidget,
-                if (footer != null) ...[const SizedBox(height: 8), footer],
-              ],
-            ),
+      child: Card(
+        color: color,
+        elevation: 5,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            // Fill the cell and distribute content safely
+            mainAxisSize: MainAxisSize.max,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (leading != null) leading,
+              const SizedBox(height: 6),
+              Text(
+                title,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
+              const SizedBox(height: 6),
+              // Value area takes remaining space, and shrinks inside where needed
+              Expanded(
+                child: Align(alignment: Alignment.topLeft, child: bigValue),
+              ),
+              if (footer != null) ...[const SizedBox(height: 8), footer],
+            ],
           ),
         ),
       ),
     );
   }
 
-  // Quick action button (bordered)
   Widget _quickAction({
     required String iconPath,
     required String label,
@@ -789,26 +759,39 @@ class _DashboardBodyState extends State<DashboardBody> {
     return InkWell(
       onTap: onTap,
       child: Container(
-        width: 175,
+        width: 220,
         decoration: BoxDecoration(
           border: Border.all(color: Colors.black12, width: 1),
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            children: [
-              SizedBox(
-                height: iconHeight,
-                child: Image.asset(iconPath, color: Colors.black),
+        padding: const EdgeInsets.all(10),
+        child: Row(
+          children: [
+            SizedBox(
+              height: iconHeight,
+              child: Image.asset(iconPath, color: Colors.black),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 16),
               ),
-              const SizedBox(width: 20),
-              Text(label, style: const TextStyle(fontSize: 16)),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  String _fmtINR(num v) {
+    final hasCents = (v % 1) != 0;
+    return NumberFormat.currency(
+      locale: 'en_IN',
+      symbol: '₹',
+      decimalDigits: hasCents ? 2 : 0,
+    ).format(v);
   }
 }

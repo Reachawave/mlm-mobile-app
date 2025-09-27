@@ -306,6 +306,32 @@ class AuthApi {
     }
   }
 
+  // ---------------- DASHBOARD (treeDetails) ----------------
+  Future<ApiResponse> getAgentDashboard() async {
+    final url = _buildUri('agent/mobile/dashboard');
+    try {
+      final res = await _client
+          .get(url, headers: _jsonAuthHeaders())
+          .timeout(const Duration(seconds: 20));
+
+      _log(url, res, 'GET');
+
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        return ApiResponse.fromJson(
+          jsonDecode(res.body) as Map<String, dynamic>,
+        );
+      }
+      throw ApiException(
+        res.statusCode,
+        res.body.isNotEmpty ? res.body : 'Failed to fetch dashboard',
+      );
+    } on SocketException catch (e) {
+      throw ApiException(null, 'Network error: ${e.message}');
+    } on FormatException catch (e) {
+      throw ApiException(null, 'Bad response format: ${e.message}');
+    }
+  }
+
   // ---------------- AGENT: VIEW ----------------
   Future<ApiResponse> getAgentDetails() async {
     final url = _buildUri(
