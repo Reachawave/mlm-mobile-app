@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:new_project/adminpages/DashboardPage.dart';
 import 'package:new_project/auth/Login.dart';
 
 void main() {

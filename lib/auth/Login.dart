@@ -48,14 +48,6 @@ class _LoginBodyState extends State<LoginBody> {
     return null;
   }
 
-  // void submitForm() {
-  //   if (_formKey.currentState!.validate()) {
-  //     Navigator.push(
-  //       context,
-  //       MaterialPageRoute(builder: (context) => Agentdashboardmainpage()),
-  //     );
-  //   }
-  // }
 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
