@@ -44,7 +44,7 @@ class _LoginBodyState extends State<LoginBody> {
 
   String? validatePassword(String? value) {
     if (value == null || value.isEmpty) return "Please enter a password.";
-    if (value.length < 8) return "Password must be atleast 8 characters long.";
+    if (value.length < 6) return "Password must be atleast 8 characters long.";
     return null;
   }
 
@@ -60,7 +60,7 @@ class _LoginBodyState extends State<LoginBody> {
     });
 
     try {
-      final uri = Uri.parse("${Constants.ipBaseUrl}/public/login");
+      final uri = Uri.parse("${Constants.ipBaseUrl}public/login");
       final response = await http.post(
         uri,
         headers: const {"Accept": "application/json", "Content-Type": "application/json"},
@@ -255,7 +255,6 @@ class _Prefs {
     if (username != null) await prefs.setString("username", username);
     if (token != null) await prefs.setString("token", token);
 
-    // store whole object too (handy for future)
     await prefs.setString('login_data', jsonEncode(loginData));
   }
 

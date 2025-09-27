@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:new_project/adminpages/WithdrawalRequestPage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'CommisionPayoutPage.dart';
-import 'DashboardPage.dart';
-import 'ManageAgentsPage.dart';
-import 'ManageBranches.dart';
-import 'TotalRevenuePage.dart';
+import 'package:new_project/widgets/app_drawer.dart';
+import 'package:new_project/utils/AuthApi.dart';
+import 'package:new_project/adminpages/CreateVenturePage.dart';
 
 class TotalVenturesPage extends StatelessWidget {
   const TotalVenturesPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(body: TotalVenturesBody());
-  }
+  Widget build(BuildContext context) =>
+      const Scaffold(body: TotalVenturesBody());
 }
 
 class TotalVenturesBody extends StatefulWidget {
@@ -24,637 +21,419 @@ class TotalVenturesBody extends StatefulWidget {
 }
 
 class _TotalVenturesBodyState extends State<TotalVenturesBody> {
-  void showUserFormDialog(BuildContext context) {
-    final TextEditingController ventureNameController = TextEditingController();
-    final TextEditingController locationController = TextEditingController();
-    final TextEditingController totaltreesController = TextEditingController();
-    final TextEditingController treessoldController = TextEditingController();
-    String? selectedVenureStatus;
+  final _search = TextEditingController();
+  final _focusNode = FocusNode();
 
-    final List<String> venturestatus = ["Upcoming", "Ongoing", "Completed"];
+  AuthApi? _api;
+  bool _loading = true;
+  String? _error;
+  List<_Venture> _ventures = [];
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          insetPadding: EdgeInsets.zero, // 👈 removes side margins
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero, // 👈 square corners
-          ),
-          child: SizedBox(
-            width: double.infinity, // 👈 full width
-            height: 700, // adjust height as needed
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 30.0,
-                vertical: 8.0,
+  @override
+  void initState() {
+    super.initState();
+    _initApiAndLoad();
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initApiAndLoad() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    final sp = await SharedPreferences.getInstance();
+    final token = sp.getString('auth_token') ?? sp.getString('token') ?? '';
+    if (token.isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'You are not logged in';
+      });
+      return;
+    }
+
+    _api = AuthApi(token: token);
+    await _loadVentures();
+  }
+
+  Future<void> _loadVentures() async {
+    try {
+      final resp = await _api!.getVentureDetails();
+      final raw = (resp.data?['ventureDetails'] as List?) ?? [];
+      _ventures = raw
+          .map((e) => _Venture.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+      setState(() {
+        _loading = false;
+        _error = null;
+      });
+    } on ApiException catch (e) {
+      setState(() {
+        _loading = false;
+        _error = e.message;
+      });
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        _error = 'Failed to load ventures: $e';
+      });
+    }
+  }
+
+  Future<void> _goToCreateVenture() async {
+    final sp = await SharedPreferences.getInstance();
+    final token = sp.getString('auth_token') ?? sp.getString('token') ?? '';
+    if (token.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('You are not logged in')));
+      return;
+    }
+    final api = AuthApi(token: token);
+    if (!mounted) return;
+    final created = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => CreateVenturePage(api: api)),
+    );
+    if (created == true) {
+      _loadVentures();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = _search.text.trim().isEmpty
+        ? _ventures
+        : _ventures.where((v) {
+            final q = _search.text.trim().toLowerCase();
+            return v.ventureName.toLowerCase().contains(q) ||
+                v.location.toLowerCase().contains(q) ||
+                v.status.toLowerCase().contains(q) ||
+                v.id.toString().toLowerCase().contains(q);
+          }).toList();
+
+    return Scaffold(
+      drawerEnableOpenDragGesture: false,
+      drawer: const AppDrawer(),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.black12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openDrawer(),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  // 👇 Close button at top-right
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.black54),
-                    iconSize: 24,
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-
-                  // Title + subtitle
-                  Column(
-                    children: const [
-                      Text(
-                        "Create New Venture",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 18.0,
-                          fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Refresh',
+            onPressed: _loading ? null : _loadVentures,
+            icon: const Icon(Icons.refresh, color: Colors.black87),
+          ),
+          const SizedBox(width: 4),
+        ],
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, color: Colors.black12),
+        ),
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(_error!, textAlign: TextAlign.center),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadVentures,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Back + Title (same as Agents/Branches)
+                    Row(
+                      children: [
+                        InkWell(
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            height: 45,
+                            width: 45,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.black12),
+                              borderRadius: BorderRadius.circular(10),
+                              color: Colors.white,
+                            ),
+                            child: Center(
+                              child: Image.asset(
+                                'lib/icons/back-arrow.png',
+                                color: Colors.black,
+                                height: 18,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 5),
-                      Text(
-                        "Fill in the details below to add a new venture",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.green, fontSize: 16.0),
-                      ),
-                      SizedBox(height: 20),
-                    ],
-                  ),
+                        const SizedBox(width: 20),
+                        const Text(
+                          "Manage Ventures",
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
 
-                  // 👇 Scrollable form
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "Venture Name",
-                            style: TextStyle(fontSize: 16.0),
-                          ),
-                          const SizedBox(height: 6.0),
-                          TextField(
-                            controller: ventureNameController,
-                            decoration: const InputDecoration(
-                              hintText: "e.g.,Green Meadows Phase 1",
-                              hintStyle: TextStyle(
-                                color: Colors.green,
-                                fontSize: 16,
-                              ),
-                              border: OutlineInputBorder(),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Colors.green,
-                                  width: 2.0,
-                                ),
-                              ),
-                              contentPadding: EdgeInsets.symmetric(
-                                vertical: 10,
-                                horizontal: 20,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 10),
-                          const Text(
-                            "Location",
-                            style: TextStyle(fontSize: 16.0),
-                          ),
-                          const SizedBox(height: 6.0),
-                          TextField(
-                            controller: locationController,
-                            decoration: const InputDecoration(
-                              hintText: "e.g.,Near Pharma City",
-                              hintStyle: TextStyle(
-                                color: Colors.green,
-                                fontSize: 16,
-                              ),
-                              border: OutlineInputBorder(),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Colors.green,
-                                  width: 2.0,
-                                ),
-                              ),
-                              contentPadding: EdgeInsets.symmetric(
-                                vertical: 10,
-                                horizontal: 20,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 10),
-                          const Text(
-                            "Status",
-                            style: TextStyle(fontSize: 16.0),
-                          ),
-                          const SizedBox(height: 6.0),
-                          DropdownButtonFormField<String>(
-                            value: selectedVenureStatus,
-                            items: venturestatus.map((ventures) {
-                              return DropdownMenuItem(
-                                value: ventures,
-                                child: Text(
-                                  ventures,
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                selectedVenureStatus = value;
-                              });
-                            },
-                            hint: const Text(
-                              "Select venture status",
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
+                    // Search + Create (same styling as Agents)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _search,
+                            focusNode: _focusNode,
+                            onChanged: (_) => setState(() {}),
                             decoration: InputDecoration(
+                              hintText:
+                                  'Search by name / id / location / status...',
+                              prefixIcon: const Icon(Icons.search),
+                              contentPadding: const EdgeInsets.all(10),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(12),
                                 borderSide: const BorderSide(
                                   color: Colors.grey,
                                 ),
                               ),
                               enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(12),
                                 borderSide: const BorderSide(
                                   color: Colors.grey,
-                                  width: 1.5,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(12),
                                 borderSide: const BorderSide(
                                   color: Colors.green,
                                   width: 2,
                                 ),
                               ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 14,
-                                horizontal: 12,
-                              ),
-                            ),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.black,
-                            ),
-                            dropdownColor: Colors.white,
-                            icon: const Icon(
-                              Icons.arrow_drop_down,
-                              color: Colors.black,
                             ),
                           ),
-
-                          const SizedBox(height: 10),
-                          const Text(
-                            "Total Trees",
-                            style: TextStyle(fontSize: 16.0),
-                          ),
-                          const SizedBox(height: 6.0),
-                          TextField(
-                            controller: totaltreesController,
-                            decoration: const InputDecoration(
-                              hintText: "e.g.,100",
-                              hintStyle: TextStyle(
-                                color: Colors.green,
-                                fontSize: 16,
-                              ),
-                              border: OutlineInputBorder(),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Colors.green,
-                                  width: 2.0,
-                                ),
-                              ),
-                              contentPadding: EdgeInsets.symmetric(
-                                vertical: 10,
-                                horizontal: 20,
-                              ),
+                        ),
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: _goToCreateVenture,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 10,
                             ),
-                          ),
-
-                          const SizedBox(height: 10),
-                          const Text(
-                            "Trees Sold(Initial)",
-                            style: TextStyle(fontSize: 16.0),
-                          ),
-                          const SizedBox(height: 6.0),
-                          TextField(
-                            controller: treessoldController,
-                            decoration: const InputDecoration(
-                              hintText: "0",
-                              hintStyle: TextStyle(
-                                color: Colors.green,
-                                fontSize: 16,
-                              ),
-                              border: OutlineInputBorder(),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Colors.green,
-                                  width: 2.0,
-                                ),
-                              ),
-                              contentPadding: EdgeInsets.symmetric(
-                                vertical: 10,
-                                horizontal: 20,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 20),
-                          SizedBox(
-                            width: double.infinity, // full width button
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                              ),
-                              onPressed: () {
-                                print(
-                                  "venture name: ${ventureNameController.text}",
-                                );
-                                print("location: ${locationController.text}");
-
-                                print(
-                                  "total trees: ${totaltreesController.text}",
-                                );
-                                print(
-                                  "trees sold: ${treessoldController.text}",
-                                );
-
-                                Navigator.of(context).pop();
-                              },
-                              child: const Text(
-                                "Create Venture",
-                                style: TextStyle(fontSize: 16.0),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-
-
-  @override
-  Widget build(BuildContext context) {
-    final List<Map<String, String>> data = [
-      {
-        "name": "Chinnala Tyuh5 acres ramannapet venture",
-        "location": "kanyakumari",
-      },
-      {"name": "Sunitha 5 acres ramannapet venture", "location": "kondagattu"},
-      {"name": "Ravi Kumar-4,hnk,chinnapendyala", "location": "vemulawada"},
-    ];
-    return Scaffold(
-      drawerEnableOpenDragGesture: false,
-      drawer: Drawer(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 30.0),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.close,
-                    color: Colors.black54,
-                    size: 18,
-                  ),
-                  onPressed: () {
-                    Navigator.pop(context); // Close drawer
-                  },
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 2),
-              child: Row(
-                children: [
-                  Icon(Icons.menu, color: Colors.green),
-                  SizedBox(width: 15),
-                  Text(
-                    "Sri Vayutej \nDevelopers",
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                children: [
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const Dashboardpage(),
-                        ),
-                      );
-                    },
-                    imagePath: "lib/icons/home.png",
-                    title: "Dashboard",
-                  ),
-
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ManageAgentPage(),
-                        ),
-                      );
-                    },
-                    icon: Icons.people_outlined,
-                    title: "Agents",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const TotalVenturesPage(),
-                        ),
-                      );
-                    },
-                    imagePath: "lib/icons/bag.png",
-                    title: "Ventures",
-                  ),
-
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ManageBranchesPage(),
-                        ),
-                      );
-                    },
-                    imagePath: "lib/icons/git.png",
-                    title: "Branches",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const TotalRevenuePage(),
-                        ),
-                      );
-                    },
-                    icon: Icons.account_balance_wallet_outlined,
-                    title: "Investments",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CommisionPayoutPage(),
-                        ),
-                      );
-                    },
-                    imagePath: "lib/icons/coins.png",
-                    title: "Payouts",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (context) => const TotalRevenuePage(),
-                      //   ),
-                      // );
-                    },
-                    imagePath: "lib/icons/decision-tree.png",
-                    title: "Referral Tree",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const Withdrawalrequestpage(),
-                        ),
-                      );
-                    },
-                    imagePath: "lib/icons/coins.png",
-                    title: "Withdrawals",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (context) => const TotalRevenuePage(),
-                      //   ),
-                      // );
-                    },
-                    imagePath: "lib/icons/charts.png",
-                    title: "Reports",
-                  ),
-                  SizedBox(height: 150),
-                  InkWell(
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 30),
-                      child: Row(
-                        children: [
-                          Container(
-                            height: 24,
-                            child: Image.asset(
-                              'lib/icons/back-arrow.png',
+                            decoration: BoxDecoration(
                               color: Colors.green,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: Colors.green,
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Image.asset(
+                                  'lib/icons/add.png',
+                                  height: 14,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 6),
+                                const Text(
+                                  "Create Venture",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          SizedBox(width: 15),
-                          Text(
-                            "Go Back",
-                            style: TextStyle(fontSize: 16, color: Colors.green),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        leading: Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Container(
-            height: 15,
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Colors.black12, // Sets the color of the border
-                width: 1.0, // Sets the width of the border
-              ),
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(
-                10.0,
-              ), // Uniform radius for all corners
-            ),
-            child: Builder(
-              builder: (context) => IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () {
-                  Scaffold.of(context).openDrawer(); // 👈 open only by button
-                },
-              ),
-            ),
-          ),
-        ),
+                    const SizedBox(height: 20),
 
-        actions: [
-          Container(
-            height: 25,
-            child: Image.asset('lib/icons/active.png', color: Colors.black),
-          ),
-          SizedBox(width: 10.0),
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Container(
-              height: 30,
-              child: Image.asset('lib/icons/user.png'),
-            ),
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Container(color: Colors.black12, height: 1.0),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Container(
-            width: double.infinity,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    InkWell(
-                      onTap: () {
-                        Navigator.pop(context); // Go back to previous page
-                      },
-                      child: Container(
-                        height: 45,
-                        width: 45,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black12, width: 1.0),
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(
-                            10.0,
-                          ), // Uniform radius for all corners
-                        ),
-                        child: Container(
-                          height: 8,
-                          child: Image.asset(
-                            'lib/icons/back-arrow.png',
-                            color: Colors.black,
-                          ),
-                        ),
+                    // Card/Table
+                    Container(
+                      width: 1000,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.black12, width: 1),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                    ),
-                    SizedBox(width: 20.0),
-                    Expanded(
-                      flex: 1,
-                      child: Text(
-                        "Manage\nVentures",
-                        style: TextStyle(
-                          fontSize: 26.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        softWrap: true,
-                        overflow: TextOverflow.visible,
-                        maxLines: null,
-                      ),
-                    ),
-                    // Text(
-                    //   "Manage\nVentures",
-                    //   style: TextStyle(
-                    //     fontSize: 26.0,
-                    //     fontWeight: FontWeight.bold,
-                    //   ),
-                    // ),
-                    SizedBox(width: 20.0),
-                    InkWell(
-                      onTap: () {
-                        showUserFormDialog(context);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          // color: Colors.green,
-                          borderRadius: BorderRadius.circular(
-                            6,
-                          ), // rounded corners
-                          border: Border.all(
-                            color: Colors.grey, // border color
-                            width: 0.5,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              height: 24,
-                              child: Image.asset(
-                                'lib/icons/add.png',
-                                color: Colors.black,
+                            Row(
+                              children: [
+                                SizedBox(
+                                  height: 24,
+                                  child: Image.asset(
+                                    "lib/icons/bag.png",
+                                    color: Colors.green,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                const Text(
+                                  "Ventures",
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Text(
+                              "Monitor the progress of all ongoing ventures",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.green,
                               ),
                             ),
-                            const SizedBox(
-                              width: 6,
-                            ), // spacing between icon and text
-                            Text(
-                              "Create Venture",
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.black,
+                            const SizedBox(height: 12),
+
+                            // Header row
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 6.0,
+                                horizontal: 4,
                               ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: const [
+                                  Expanded(
+                                    flex: 6,
+                                    child: Text(
+                                      "Name & Location",
+                                      style: TextStyle(color: Colors.green),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 4,
+                                    child: Text(
+                                      "Availability",
+                                      style: TextStyle(color: Colors.green),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Divider(thickness: 0.3, color: Colors.green),
+
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: filtered.length,
+                              separatorBuilder: (_, __) => const Divider(
+                                thickness: 0.25,
+                                color: Colors.green,
+                              ),
+                              itemBuilder: (context, i) {
+                                final v = filtered[i];
+                                final percent = v.totalTrees == 0
+                                    ? 0.0
+                                    : (v.treesSold / v.totalTrees).clamp(
+                                        0.0,
+                                        1.0,
+                                      );
+
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8.0,
+                                    horizontal: 4,
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      // name + location + status badge
+                                      Expanded(
+                                        flex: 6,
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              v.ventureName,
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              v.location,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.green,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 4,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.green,
+                                                borderRadius:
+                                                    BorderRadius.circular(50),
+                                              ),
+                                              child: Text(
+                                                v.status,
+                                                style: const TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
+                                      // availability bar
+                                      Expanded(
+                                        flex: 4,
+                                        child: _AvailabilityBar(
+                                          sold: v.treesSold,
+                                          total: v.totalTrees,
+                                          percent: percent,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -662,196 +441,83 @@ class _TotalVenturesBodyState extends State<TotalVenturesBody> {
                     ),
                   ],
                 ),
-                SizedBox(height: 30.0),
-                Container(
-                  width: 1000,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black12, width: 1.0),
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(
-                      10.0,
-                    ), // Uniform radius for all corners
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              height: 24.0,
-                              child: Image.asset(
-                                "lib/icons/bag.png",
-                                color: Colors.green,
-                              ),
-                            ),
-                            SizedBox(width: 10.0),
-                            Text(
-                              "Ventures",
-                              style: TextStyle(
-                                fontSize: 24.0,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          "Monitor the progress of all ongoing ventures",
-                          style: TextStyle(fontSize: 16.0, color: Colors.green),
-                        ),
-                        SizedBox(height: 30.0),
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "Name & Location",
-                                style: TextStyle(
-                                  fontSize: 16.0,
-                                  color: Colors.green,
-                                ),
-                              ),
-                              Text(
-                                "Availability",
-                                style: TextStyle(
-                                  fontSize: 16.0,
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 3.0),
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: data.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            final item = data[index];
-                            final name = item["name"] ?? '';
-                            final location = item["location"] ?? '';
-
-                            return Column(
-                              children: [
-                                const Divider(
-                                  thickness: 0.3,
-                                  color: Colors.green,
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // Name + ID
-                                      // Name + ID column (auto-wrap)
-                                      Expanded(
-                                        flex: 1,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              name,
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.black,
-                                              ),
-                                              softWrap: true,
-                                              overflow: TextOverflow.visible,
-                                              maxLines: null,
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              location,
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.green,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(width: 30),
-                                      Container(
-                                        width: 90, // full device width
-                                        height: 20,
-                                        decoration: BoxDecoration(
-                                          color: Colors
-                                              .green, // 👈 fill with green
-                                          borderRadius: BorderRadius.circular(
-                                            30,
-                                          ), // 👈 pill shape
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 }
 
-class DrawerMenuRow extends StatelessWidget {
-  final IconData? icon; // optional icon
-  final String? imagePath; // optional image
-  final String title;
-  final VoidCallback? onTap; // <-- add this
+class _AvailabilityBar extends StatelessWidget {
+  final int sold;
+  final int total;
+  final double percent;
 
-  const DrawerMenuRow({
+  const _AvailabilityBar({
     super.key,
-    this.icon,
-    this.imagePath,
-    required this.title,
-    this.onTap, // <-- accept callback
+    required this.sold,
+    required this.total,
+    required this.percent,
   });
 
   @override
   Widget build(BuildContext context) {
-    Widget leadingWidget;
-
-    if (imagePath != null) {
-      leadingWidget = Image.asset(
-        imagePath!,
-        width: 24,
-        height: 24,
-        color: Colors.green,
-      );
-    } else if (icon != null) {
-      leadingWidget = Icon(icon, color: Colors.green);
-    } else {
-      leadingWidget = const SizedBox(width: 24, height: 24);
-    }
-
-    return InkWell(
-      onTap: onTap, // <-- call the callback
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-        child: Row(
-          children: [
-            leadingWidget,
-            const SizedBox(width: 15),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 20, color: Colors.green),
-            ),
-          ],
+    const barH = 18.0;
+    return Stack(
+      alignment: Alignment.centerLeft,
+      children: [
+        Container(
+          height: barH,
+          decoration: BoxDecoration(
+            color: Colors.black12,
+            borderRadius: BorderRadius.circular(30),
+          ),
         ),
-      ),
+        FractionallySizedBox(
+          widthFactor: percent.isNaN ? 0 : percent,
+          child: Container(
+            height: barH,
+            decoration: BoxDecoration(
+              color: Colors.green,
+              borderRadius: BorderRadius.circular(30),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: Center(
+            child: Text(
+              "$sold / $total",
+              style: const TextStyle(fontSize: 10, color: Colors.white),
+            ),
+          ),
+        ),
+      ],
     );
   }
+}
+
+class _Venture {
+  final int id;
+  final String ventureName;
+  final String location;
+  final String status;
+  final int totalTrees;
+  final int treesSold;
+
+  _Venture({
+    required this.id,
+    required this.ventureName,
+    required this.location,
+    required this.status,
+    required this.totalTrees,
+    required this.treesSold,
+  });
+
+  factory _Venture.fromJson(Map<String, dynamic> j) => _Venture(
+    id: (j['id'] ?? 0) as int,
+    ventureName: (j['ventureName'] ?? '').toString(),
+    location: (j['location'] ?? '').toString(),
+    status: (j['status'] ?? '').toString(),
+    totalTrees: (j['totalTrees'] ?? 0) as int,
+    treesSold: (j['treesSold'] ?? 0) as int,
+  );
 }
