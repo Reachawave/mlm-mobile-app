@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:new_project/adminpages/LoginPage.dart';
+import 'package:new_project/auth/Login.dart';
 
 class Forgotpasswod extends StatelessWidget {
   const Forgotpasswod({super.key});
