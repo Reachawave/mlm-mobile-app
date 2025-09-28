@@ -547,6 +547,91 @@ class AuthApi {
     }
   }
 
+  // ---------- NEW: UPDATE AGENT ----------
+  Future<ApiResponse> updateAgentMobile({
+    required String id,
+    required Map<String, dynamic> body,
+  }) async {
+    final url = _buildUri('agent/update/mobile/$id');
+
+    try {
+      final res = await _client
+          .put(url, headers: _jsonAuthHeaders(), body: jsonEncode(body))
+          .timeout(const Duration(seconds: 20));
+
+      _log(url, res, 'PUT');
+
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        return ApiResponse.fromJson(
+          jsonDecode(res.body) as Map<String, dynamic>,
+        );
+      }
+      throw ApiException(
+        res.statusCode,
+        res.body.isNotEmpty ? res.body : 'Failed to update agent',
+      );
+    } on SocketException catch (e) {
+      throw ApiException(null, 'Network error: ${e.message}');
+    } on FormatException catch (e) {
+      throw ApiException(null, 'Bad response format: ${e.message}');
+    }
+  }
+
+  Future<ApiResponse> updateVentureMobile({
+    required String id,
+    required Map<String, dynamic> body,
+  }) async {
+    final url = _buildUri('admin/venture/mobile/update/$id');
+    try {
+      final res = await _client
+          .put(url, headers: _jsonAuthHeaders(), body: jsonEncode(body))
+          .timeout(const Duration(seconds: 20));
+      _log(url, res, 'PUT');
+
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        return ApiResponse.fromJson(
+          jsonDecode(res.body) as Map<String, dynamic>,
+        );
+      }
+      throw ApiException(
+        res.statusCode,
+        res.body.isNotEmpty ? res.body : 'Failed to update venture',
+      );
+    } on SocketException catch (e) {
+      throw ApiException(null, 'Network error: ${e.message}');
+    } on FormatException catch (e) {
+      throw ApiException(null, 'Bad response format: ${e.message}');
+    }
+  }
+
+  Future<ApiResponse> updateBranchMobile({
+    required String id,
+    required Map<String, dynamic> body,
+  }) async {
+    final url = _buildUri('admin/branch/update/$id');
+    try {
+      final res = await _client
+          .put(url, headers: _jsonAuthHeaders(), body: jsonEncode(body))
+          .timeout(const Duration(seconds: 20));
+
+      _log(url, res, 'PUT');
+
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        return ApiResponse.fromJson(
+          jsonDecode(res.body) as Map<String, dynamic>,
+        );
+      }
+      throw ApiException(
+        res.statusCode,
+        res.body.isNotEmpty ? res.body : 'Failed to update branch',
+      );
+    } on SocketException catch (e) {
+      throw ApiException(null, 'Network error: ${e.message}');
+    } on FormatException catch (e) {
+      throw ApiException(null, 'Bad response format: ${e.message}');
+    }
+  }
+
   // ------------- VENTURE (MOBILE): CREATE -------------
   Future<ApiResponse> createVentureMobile({
     required String ventureName,
