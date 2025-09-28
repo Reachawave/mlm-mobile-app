@@ -1,5 +1,5 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:new_project/agentpages/withdrawpage.dart';
 import 'package:new_project/agentpages/withdrawpage.dart';
 
 import '../adminpages/CommisionPayoutPage.dart';
@@ -10,10 +10,13 @@ import '../adminpages/TotalRevenuePage.dart';
 import '../adminpages/TotalVenturesPage.dart';
 import '../adminpages/WithdrawalRequestPage.dart';
 import '../agentpages/Agentdashboardpage.dart';
-import 'agentprofilepage.dart';
+import 'package:new_project/agentpages/agentprofilepage.dart';
+
 import 'commisionReport.dart';
 import 'networkpage.dart';
 import 'notificationsPage.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Agentdashboardmainpage extends StatefulWidget {
   final int initialIndex;
@@ -26,21 +29,38 @@ class Agentdashboardmainpage extends StatefulWidget {
 
 class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
   late int _selectedIndex;
+  int? agentId;
+  String? token;
 
-  final List<Widget> _pages = [
-    Agentdashboardpage(),
-    MyNetworkPage(),
-    withdrawpage(),
-    Commisionreport(),
-    notifypage(),
-    prifilepage(),
-
-  ];
+  // We'll initialize _pages after loading data
+  late List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    _loadAgentData();
+  }
+
+  Future<void> _loadAgentData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final loadedAgentId = prefs.getInt('agentId');
+    final loadedToken = prefs.getString('token');
+
+    setState(() {
+      agentId = loadedAgentId;
+      token = loadedToken;
+
+      _pages = [
+        Agentdashboardpage(),
+        MyNetworkPage(),
+        WithdrawPage(),
+        CommissionReport(),
+        notifypage(),
+        ProfilePage(agentId: (agentId?.toString() ?? ''), token: token ?? ''),
+
+      ];
+    });
   }
 
   void _onTabTapped(int index) {
@@ -51,6 +71,13 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
 
   @override
   Widget build(BuildContext context) {
+    // Show loading indicator if _pages not initialized yet (i.e., agentId/token not loaded)
+    if (agentId == null || token == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       drawer: Drawer(
         child: Column(
@@ -98,9 +125,7 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Agentdashboardmainpage(
-                            initialIndex: 0,
-                          ), // 👈 Withdraw tab
+                          builder: (context) => Agentdashboardmainpage(initialIndex: 0),
                         ),
                       );
                     },
@@ -113,7 +138,7 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Agentdashboardmainpage(initialIndex: 1), // 👈 Withdraw tab
+                          builder: (context) => Agentdashboardmainpage(initialIndex: 1),
                         ),
                       );
                     },
@@ -126,9 +151,7 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Agentdashboardmainpage(
-                            initialIndex: 2,
-                          ), // 👈 Withdraw tab
+                          builder: (context) => Agentdashboardmainpage(initialIndex: 2),
                         ),
                       );
                     },
@@ -141,7 +164,7 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Agentdashboardmainpage(initialIndex: 4), // 👈 Withdraw tab
+                          builder: (context) => Agentdashboardmainpage(initialIndex: 4),
                         ),
                       );
                     },
@@ -154,9 +177,7 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Agentdashboardmainpage(
-                            initialIndex: 5,
-                          ), // 👈 Withdraw tab
+                          builder: (context) => Agentdashboardmainpage(initialIndex: 5),
                         ),
                       );
                     },
@@ -169,9 +190,7 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Agentdashboardmainpage(
-                            initialIndex: 3,
-                          ), // 👈 Withdraw tab
+                          builder: (context) => Agentdashboardmainpage(initialIndex: 3),
                         ),
                       );
                     },
@@ -302,7 +321,6 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
             icon: Icon(Icons.person),
             label: "Profile",
           ),
-
         ],
       ),
     );
