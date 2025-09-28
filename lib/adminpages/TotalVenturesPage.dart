@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:new_project/utils/diff_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_project/widgets/app_drawer.dart';
@@ -108,6 +109,211 @@ class _TotalVenturesBodyState extends State<TotalVenturesBody> {
     }
   }
 
+  // ---------- EDIT VENTURE ----------
+  Future<void> _openEditVenture(_Venture v) async {
+    final formKey = GlobalKey<FormState>();
+    final nameCtrl = TextEditingController(text: v.ventureName);
+    final locCtrl = TextEditingController(text: v.location);
+    String status = v.status;
+
+    bool submitting = false;
+    String? errorText;
+
+    // include common statuses + keep unknown current status
+    final statuses = <String>{"Active", "Inactive", "On Hold", status}.toList();
+
+    final saved = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setS) {
+            Future<void> submit() async {
+              if (!formKey.currentState!.validate()) return;
+
+              // Build original vs edited maps
+              final original = <String, dynamic>{
+                "ventureName": v.ventureName,
+                "location": v.location,
+                "status": v.status,
+              };
+              final edited = <String, dynamic>{
+                "ventureName": nameCtrl.text,
+                "location": locCtrl.text,
+                "status": status,
+              };
+
+              // Only send changed, non-null, trimmed fields
+              final diff = changedFields(original, edited);
+
+              if (diff.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No changes to save')),
+                );
+                return;
+              }
+
+              setS(() {
+                submitting = true;
+                errorText = null;
+              });
+
+              try {
+                await _api!.updateVentureMobile(
+                  id: v.id.toString(),
+                  body: diff,
+                );
+                if (!mounted) return;
+                Navigator.pop(ctx, true);
+              } catch (e) {
+                setS(() {
+                  submitting = false;
+                  errorText = e.toString();
+                });
+              }
+            }
+
+            InputDecoration dec(String label) => InputDecoration(
+              labelText: label,
+              border: const OutlineInputBorder(),
+              isDense: true,
+            );
+
+            return Dialog(
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 24,
+              ),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Form(
+                    key: formKey,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.edit, color: Colors.green),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Edit Venture (#${v.id})',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                              const Spacer(),
+                              IconButton(
+                                icon: const Icon(Icons.close),
+                                onPressed: submitting
+                                    ? null
+                                    : () => Navigator.pop(ctx, false),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          if (errorText != null) ...[
+                            Text(
+                              errorText!,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              SizedBox(
+                                width: 520,
+                                child: TextFormField(
+                                  controller: nameCtrl,
+                                  decoration: dec('Venture Name'),
+                                  validator: (v) =>
+                                      v!.trim().isEmpty ? 'Required' : null,
+                                ),
+                              ),
+                              SizedBox(
+                                width: 520,
+                                child: TextFormField(
+                                  controller: locCtrl,
+                                  decoration: dec('Location'),
+                                  validator: (v) =>
+                                      v!.trim().isEmpty ? 'Required' : null,
+                                ),
+                              ),
+                              SizedBox(
+                                width: 520,
+                                child: DropdownButtonFormField<String>(
+                                  value: status,
+                                  items: statuses
+                                      .map(
+                                        (s) => DropdownMenuItem(
+                                          value: s,
+                                          child: Text(s),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (val) =>
+                                      setS(() => status = val ?? status),
+                                  decoration: dec('Status'),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: submitting ? null : submit,
+                                  icon: submitting
+                                      ? const SizedBox(
+                                          height: 18,
+                                          width: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : const Icon(Icons.save),
+                                  label: const Text('Save changes'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (saved == true) {
+      await _loadVentures();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Venture updated')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final filtered = _search.text.trim().isEmpty
@@ -170,7 +376,7 @@ class _TotalVenturesBodyState extends State<TotalVenturesBody> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Back + Title (same as Agents/Branches)
+                    // Back + Title
                     Row(
                       children: [
                         InkWell(
@@ -204,7 +410,7 @@ class _TotalVenturesBodyState extends State<TotalVenturesBody> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Search + Create (same styling as Agents)
+                    // Search + Create
                     Row(
                       children: [
                         Expanded(
@@ -281,7 +487,7 @@ class _TotalVenturesBodyState extends State<TotalVenturesBody> {
 
                     // Card/Table
                     Container(
-                      width: 1000,
+                      width: double.infinity, // responsive (no fixed 1000)
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.black12, width: 1),
                         color: Colors.white,
@@ -327,20 +533,25 @@ class _TotalVenturesBodyState extends State<TotalVenturesBody> {
                                 horizontal: 4,
                               ),
                               child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
                                 children: const [
                                   Expanded(
-                                    flex: 6,
+                                    flex: 5,
                                     child: Text(
                                       "Name & Location",
                                       style: TextStyle(color: Colors.green),
                                     ),
                                   ),
                                   Expanded(
-                                    flex: 4,
+                                    flex: 3,
                                     child: Text(
                                       "Availability",
+                                      style: TextStyle(color: Colors.green),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Text(
+                                      "Actions",
                                       style: TextStyle(color: Colors.green),
                                     ),
                                   ),
@@ -377,7 +588,7 @@ class _TotalVenturesBodyState extends State<TotalVenturesBody> {
                                     children: [
                                       // name + location + status badge
                                       Expanded(
-                                        flex: 6,
+                                        flex: 5,
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
@@ -404,7 +615,7 @@ class _TotalVenturesBodyState extends State<TotalVenturesBody> {
                                                     vertical: 4,
                                                   ),
                                               decoration: BoxDecoration(
-                                                color: Colors.green,
+                                                color: _statusColor(v.status),
                                                 borderRadius:
                                                     BorderRadius.circular(50),
                                               ),
@@ -423,11 +634,26 @@ class _TotalVenturesBodyState extends State<TotalVenturesBody> {
 
                                       // availability bar
                                       Expanded(
-                                        flex: 4,
+                                        flex: 3,
                                         child: _AvailabilityBar(
                                           sold: v.treesSold,
                                           total: v.totalTrees,
                                           percent: percent,
+                                        ),
+                                      ),
+
+                                      // actions
+                                      Expanded(
+                                        flex: 2,
+                                        child: Wrap(
+                                          spacing: 6,
+                                          children: [
+                                            _actionButton(
+                                              icon: Icons.edit,
+                                              label: '',
+                                              onTap: () => _openEditVenture(v),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
@@ -443,6 +669,37 @@ class _TotalVenturesBodyState extends State<TotalVenturesBody> {
                 ),
               ),
             ),
+    );
+  }
+
+  // small helper for badge color
+  static Color _statusColor(String s) {
+    switch (s.toLowerCase()) {
+      case 'active':
+        return Colors.green;
+      case 'inactive':
+        return Colors.redAccent;
+      case 'on hold':
+        return Colors.orange;
+      default:
+        return Colors.blueGrey;
+    }
+  }
+
+  // simple button used in actions column
+  Widget _actionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: 16),
+      label: Text(label, style: const TextStyle(fontSize: 12)),
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        side: BorderSide(color: Colors.grey.shade400, width: 0.8),
+      ),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:new_project/utils/diff_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_project/widgets/app_drawer.dart';
@@ -105,6 +106,188 @@ class _ManageBranchesPageBodyState extends State<ManageBranchesPageBody> {
     );
     if (created == true) {
       _loadBranches();
+    }
+  }
+
+  // ---------- EDIT BRANCH ----------
+  Future<void> _openEditBranch(_Branch b) async {
+    final formKey = GlobalKey<FormState>();
+    final nameCtrl = TextEditingController(text: b.branchName);
+    final locCtrl = TextEditingController(text: b.location);
+
+    bool submitting = false;
+    String? errorText;
+
+    final saved = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setS) {
+            InputDecoration dec(String label) => InputDecoration(
+              labelText: label,
+              border: const OutlineInputBorder(),
+              isDense: true,
+            );
+
+            Future<void> submit() async {
+              if (!formKey.currentState!.validate()) return;
+
+              // Build original vs edited maps
+              final original = <String, dynamic>{
+                "branchName": b.branchName,
+                "location": b.location,
+              };
+              final edited = <String, dynamic>{
+                "branchName": nameCtrl.text,
+                "location": locCtrl.text,
+              };
+
+              // Only send changed, non-null, trimmed fields
+              final diff = changedFields(original, edited);
+
+              if (diff.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No changes to save')),
+                );
+                return;
+              }
+
+              setS(() {
+                submitting = true;
+                errorText = null;
+              });
+
+              try {
+                await _api!.updateBranchMobile(id: b.id.toString(), body: diff);
+                if (!mounted) return;
+                Navigator.pop(ctx, true);
+              } catch (e) {
+                setS(() {
+                  submitting = false;
+                  errorText = e.toString();
+                });
+              }
+            }
+
+            return Dialog(
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 24,
+              ),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Form(
+                    key: formKey,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.edit_location_alt,
+                                color: Colors.green,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Edit Branch (#${b.id})',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                              const Spacer(),
+                              IconButton(
+                                icon: const Icon(Icons.close),
+                                onPressed: submitting
+                                    ? null
+                                    : () => Navigator.pop(ctx, false),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          if (errorText != null) ...[
+                            Text(
+                              errorText!,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              SizedBox(
+                                width: 520,
+                                child: TextFormField(
+                                  controller: nameCtrl,
+                                  decoration: dec('Branch Name'),
+                                  validator: (v) =>
+                                      v!.trim().isEmpty ? 'Required' : null,
+                                ),
+                              ),
+                              SizedBox(
+                                width: 520,
+                                child: TextFormField(
+                                  controller: locCtrl,
+                                  decoration: dec('Location'),
+                                  validator: (v) =>
+                                      v!.trim().isEmpty ? 'Required' : null,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: submitting ? null : submit,
+                                  icon: submitting
+                                      ? const SizedBox(
+                                          height: 18,
+                                          width: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : const Icon(Icons.save),
+                                  label: const Text('Save changes'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (saved == true) {
+      await _loadBranches();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Branch updated')));
     }
   }
 
@@ -279,7 +462,7 @@ class _ManageBranchesPageBodyState extends State<ManageBranchesPageBody> {
 
                     // Card/Table
                     Container(
-                      width: 1000,
+                      width: double.infinity, // responsive
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.black12, width: 1),
                         color: Colors.white,
@@ -329,7 +512,7 @@ class _ManageBranchesPageBodyState extends State<ManageBranchesPageBody> {
                                   Expanded(
                                     flex: 2,
                                     child: Text(
-                                      "Branch ID",
+                                      "ID",
                                       style: TextStyle(color: Colors.green),
                                     ),
                                   ),
@@ -344,6 +527,13 @@ class _ManageBranchesPageBodyState extends State<ManageBranchesPageBody> {
                                     flex: 4,
                                     child: Text(
                                       "Location",
+                                      style: TextStyle(color: Colors.green),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: Text(
+                                      "Actions",
                                       style: TextStyle(color: Colors.green),
                                     ),
                                   ),
@@ -390,6 +580,37 @@ class _ManageBranchesPageBodyState extends State<ManageBranchesPageBody> {
                                           style: const TextStyle(fontSize: 13),
                                         ),
                                       ),
+                                      Expanded(
+                                        flex: 3,
+                                        child: Wrap(
+                                          spacing: 8,
+                                          children: [
+                                            OutlinedButton.icon(
+                                              onPressed: () =>
+                                                  _openEditBranch(b),
+                                              icon: const Icon(
+                                                Icons.edit,
+                                                size: 16,
+                                              ),
+                                              label: const Text(
+                                                'Edit',
+                                                style: TextStyle(fontSize: 12),
+                                              ),
+                                              style: OutlinedButton.styleFrom(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 8,
+                                                    ),
+                                                side: BorderSide(
+                                                  color: Colors.grey.shade400,
+                                                  width: 0.8,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 );
@@ -407,6 +628,7 @@ class _ManageBranchesPageBodyState extends State<ManageBranchesPageBody> {
   }
 }
 
+// ---------- model ----------
 class _Branch {
   final int id;
   final String branchName;

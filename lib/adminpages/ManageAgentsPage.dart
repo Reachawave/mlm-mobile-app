@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:new_project/utils/AuthApi.dart';
 import 'package:new_project/widgets/app_drawer.dart';
 import 'package:new_project/adminpages/CreateAgentPage.dart';
+import 'package:new_project/utils/diff_utils.dart';
 
 class ManageAgentPage extends StatelessWidget {
   const ManageAgentPage({super.key});
@@ -108,16 +109,284 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
     }
   }
 
+  // ---------- EDIT: open modal, submit PUT /agent/update/mobile/{id} ----------
+  Future<void> _openEditDialog(_Agent a) async {
+    final formKey = GlobalKey<FormState>();
+
+    // Controllers prefilled from the row data
+    final name = TextEditingController(text: a.name);
+    final otherName = TextEditingController(text: a.otherName);
+    final aadharNo = TextEditingController(text: a.aadharNo);
+    final panNo = TextEditingController(text: a.panNo);
+    final address = TextEditingController(text: a.address);
+    final bankName = TextEditingController(text: a.bankName);
+    final ifscCode = TextEditingController(text: a.ifscCode);
+    final accountNo = TextEditingController(text: a.accountNo);
+    final accountHolderName = TextEditingController(text: a.accountHolderName);
+
+    bool submitting = false;
+    String? errorText;
+
+    final updated = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (ctx, setS) {
+            InputDecoration dec(String label) => const InputDecoration(
+              border: OutlineInputBorder(),
+              isDense: true,
+            ).copyWith(labelText: label);
+
+            Future<void> submit() async {
+              if (!formKey.currentState!.validate()) return;
+
+              // Build original vs edited maps
+              final original = <String, dynamic>{
+                "name": a.name,
+                "aadharNo": a.aadharNo,
+                "address": a.address,
+                "bankName": a.bankName,
+                "ifscCode": a.ifscCode,
+                "accountNo": a.accountNo,
+                "accountHolderName": a.accountHolderName,
+                "otherName": a.otherName,
+                "panNo": a.panNo,
+              };
+
+              final edited = <String, dynamic>{
+                "name": name.text,
+                "aadharNo": aadharNo.text,
+                "address": address.text,
+                "bankName": bankName.text,
+                "ifscCode": ifscCode.text.toUpperCase(),
+                "accountNo": accountNo.text,
+                "accountHolderName": accountHolderName.text,
+                "otherName": otherName.text,
+                "panNo": panNo.text.toUpperCase(),
+              };
+
+              // Only send changed (and non-null) fields
+              final diff = changedFields(original, edited);
+
+              if (diff.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No changes to save')),
+                );
+                return;
+              }
+
+              setS(() {
+                submitting = true;
+                errorText = null;
+              });
+
+              try {
+                await _api!.updateAgentMobile(id: a.id.toString(), body: diff);
+                if (!mounted) return;
+                Navigator.pop(ctx, true);
+              } catch (e) {
+                setS(() {
+                  submitting = false;
+                  errorText = e.toString();
+                });
+              }
+            }
+
+            return Dialog(
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 24,
+              ),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Form(
+                    key: formKey,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.edit, color: Colors.green),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Edit Agent (${a.referalId})',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                              const Spacer(),
+                              IconButton(
+                                icon: const Icon(Icons.close),
+                                onPressed: submitting
+                                    ? null
+                                    : () => Navigator.pop(ctx, false),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          if (errorText != null) ...[
+                            Text(
+                              errorText!,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+
+                          LayoutBuilder(
+                            builder: (c, con) {
+                              final twoCols = con.maxWidth > 460;
+                              double colW(bool full) =>
+                                  full ? con.maxWidth : (con.maxWidth - 12) / 2;
+
+                              return Wrap(
+                                spacing: 12,
+                                runSpacing: 12,
+                                children: [
+                                  SizedBox(
+                                    width: colW(false),
+                                    child: TextFormField(
+                                      controller: name,
+                                      decoration: dec('Name'),
+                                      validator: (v) =>
+                                          v!.trim().isEmpty ? 'Required' : null,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: colW(false),
+                                    child: TextFormField(
+                                      controller: otherName,
+                                      decoration: dec('Other Name'),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: colW(false),
+                                    child: TextFormField(
+                                      controller: aadharNo,
+                                      decoration: dec('Aadhar No'),
+                                      keyboardType: TextInputType.number,
+                                      validator: (v) =>
+                                          v!.trim().isEmpty ? 'Required' : null,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: colW(false),
+                                    child: TextFormField(
+                                      controller: panNo,
+                                      decoration: dec('PAN No'),
+                                      textCapitalization:
+                                          TextCapitalization.characters,
+                                      validator: (v) =>
+                                          v!.trim().isEmpty ? 'Required' : null,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: colW(true),
+                                    child: TextFormField(
+                                      controller: address,
+                                      decoration: dec('Address'),
+                                      maxLines: 2,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: colW(false),
+                                    child: TextFormField(
+                                      controller: bankName,
+                                      decoration: dec('Bank Name'),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: colW(false),
+                                    child: TextFormField(
+                                      controller: ifscCode,
+                                      decoration: dec('IFSC Code'),
+                                      textCapitalization:
+                                          TextCapitalization.characters,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: colW(false),
+                                    child: TextFormField(
+                                      controller: accountNo,
+                                      decoration: dec('Account No'),
+                                      keyboardType: TextInputType.number,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: colW(false),
+                                    child: TextFormField(
+                                      controller: accountHolderName,
+                                      decoration: dec('Account Holder Name'),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: submitting ? null : submit,
+                                  icon: submitting
+                                      ? const SizedBox(
+                                          height: 18,
+                                          width: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : const Icon(Icons.save),
+                                  label: const Text('Save changes'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (updated == true) {
+      await _loadAgents();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Agent updated')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final filtered = _search.text.trim().isEmpty
         ? _agents
         : _agents.where((a) {
-      final q = _search.text.trim().toLowerCase();
-      return a.name.toLowerCase().contains(q) ||
-          a.referalId.toLowerCase().contains(q) ||
-          a.contactNumber.toLowerCase().contains(q);
-    }).toList();
+            final q = _search.text.trim().toLowerCase();
+            return a.name.toLowerCase().contains(q) ||
+                a.referalId.toLowerCase().contains(q) ||
+                a.contactNumber.toLowerCase().contains(q);
+          }).toList();
 
     return Scaffold(
       drawer: const AppDrawer(),
@@ -155,136 +424,139 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
           ? const Center(child: CircularProgressIndicator())
           : _error != null
           ? Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(_error!, textAlign: TextAlign.center),
-        ),
-      )
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(_error!, textAlign: TextAlign.center),
+              ),
+            )
           : RefreshIndicator(
-        onRefresh: _loadAgents,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    InkWell(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        height: 45,
-                        width: 45,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black12),
-                          borderRadius: BorderRadius.circular(10),
-                          color: Colors.white,
-                        ),
-                        child: Center(
-                          child: Image.asset(
-                            'lib/icons/back-arrow.png',
-                            color: Colors.black,
-                            height: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    const Text(
-                      "Manage Agents",
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Search + Create
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _search,
-                        focusNode: _focusNode,
-                        onChanged: (_) => setState(() {}),
-                        decoration: InputDecoration(
-                          hintText:
-                          'Search by name / referral / phone...',
-                          prefixIcon: const Icon(Icons.search),
-                          contentPadding: const EdgeInsets.all(10),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Colors.grey,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Colors.grey,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Colors.green,
-                              width: 2,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    InkWell(
-                      onTap: _goToCreateAgent,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.green,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: Colors.green,
-                            width: 0.5,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Image.asset(
-                              'lib/icons/add-friend.png',
-                              height: 14,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 6),
-                            const Text(
-                              "Create Agent",
-                              style: TextStyle(
-                                fontSize: 12,
+              onRefresh: _loadAgents,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          InkWell(
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              height: 45,
+                              width: 45,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.black12),
+                                borderRadius: BorderRadius.circular(10),
                                 color: Colors.white,
                               ),
+                              child: Center(
+                                child: Image.asset(
+                                  'lib/icons/back-arrow.png',
+                                  color: Colors.black,
+                                  height: 18,
+                                ),
+                              ),
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 20),
+                          const Text(
+                            "Manage Agents",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 20),
+
+                      // Search + Create
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _search,
+                              focusNode: _focusNode,
+                              onChanged: (_) => setState(() {}),
+                              decoration: InputDecoration(
+                                hintText:
+                                    'Search by name / referral / phone...',
+                                prefixIcon: const Icon(Icons.search),
+                                contentPadding: const EdgeInsets.all(10),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: Colors.green,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          InkWell(
+                            onTap: _goToCreateAgent,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: Colors.green,
+                                  width: 0.5,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset(
+                                    'lib/icons/add-friend.png',
+                                    height: 14,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  const Text(
+                                    "Create Agent",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Table card (fixed-width, horizontal scroll)
+                      _AgentsTable(
+                        agents: filtered,
+                        onEdit: _openEditDialog, // <— wired here
+                      ),
+                    ],
+                  ),
                 ),
-
-                const SizedBox(height: 20),
-
-                // Table card (fixed-width, horizontal scroll)
-                _AgentsTable(agents: filtered),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -292,13 +564,15 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
 // ====== Fixed-width, horizontally scrollable agents table ======
 
 class _AgentsTable extends StatelessWidget {
-  const _AgentsTable({required this.agents});
+  const _AgentsTable({required this.agents, required this.onEdit});
+
   final List<_Agent> agents;
+  final Future<void> Function(_Agent) onEdit;
 
   static const double _wAgent = 300;
   static const double _wContact = 220;
   static const double _wMap = 340; // Venture • Branch
-  static const double _wActions = 200;
+  static const double _wActions = 220;
 
   @override
   Widget build(BuildContext context) {
@@ -312,135 +586,169 @@ class _AgentsTable extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(
-            children: const [
-              Icon(Icons.people_outlined, size: 30, color: Colors.green),
-              SizedBox(width: 10),
-              Text("Agents",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          const Text(
-            "Manage and view all registered agents and their referral upline",
-            style: TextStyle(fontSize: 12, color: Colors.green),
-          ),
-          const SizedBox(height: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: const [
+                Icon(Icons.people_outlined, size: 30, color: Colors.green),
+                SizedBox(width: 10),
+                Text(
+                  "Agents",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const Text(
+              "Manage and view all registered agents and their referral upline",
+              style: TextStyle(fontSize: 12, color: Colors.green),
+            ),
+            const SizedBox(height: 16),
 
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minWidth: totalWidth),
-              child: Column(
-                children: [
-                  // Header
-                  Padding(
-                    padding:
-                    const EdgeInsets.symmetric(vertical: 6.0, horizontal: 4),
-                    child: Row(
-                      children: const [
-                        _HeaderCell(width: _wAgent, text: "Agent"),
-                        _HeaderCell(width: _wContact, text: "Contact"),
-                        _HeaderCell(width: _wMap, text: "Venture • Branch"),
-                        _HeaderCell(width: _wActions, text: "Actions"),
-                      ],
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: totalWidth),
+                child: Column(
+                  children: [
+                    // Header
+                    const Padding(
+                      padding: EdgeInsets.symmetric(
+                        vertical: 6.0,
+                        horizontal: 4,
+                      ),
+                      child: Row(
+                        children: [
+                          _HeaderCell(width: _wAgent, text: "Agent"),
+                          _HeaderCell(width: _wContact, text: "Contact"),
+                          _HeaderCell(width: _wMap, text: "Venture • Branch"),
+                          _HeaderCell(width: _wActions, text: "Actions"),
+                        ],
+                      ),
                     ),
-                  ),
-                  const Divider(thickness: 0.3, color: Colors.green, height: 0),
+                    const Divider(
+                      thickness: 0.3,
+                      color: Colors.green,
+                      height: 0,
+                    ),
 
-                  // Rows
-                  ...List.generate(agents.length, (i) {
-                    final a = agents[i];
-                    return Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 8.0, horizontal: 4),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _Cell(
-                                width: _wAgent,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(a.name,
-                                        style: const TextStyle(fontSize: 13)),
-                                    const SizedBox(height: 2),
-                                    Text(a.referalId,
+                    // Rows
+                    ...List.generate(agents.length, (i) {
+                      final a = agents[i];
+                      return Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 8.0,
+                              horizontal: 4,
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _Cell(
+                                  width: _wAgent,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        a.name,
+                                        style: const TextStyle(fontSize: 13),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        a.referalId,
                                         style: const TextStyle(
-                                            fontSize: 11, color: Colors.green)),
-                                    if ((a.agentReferalName ?? '').isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 2),
-                                        child: Text(
-                                          "Upline: ${a.agentReferalName}",
-                                          style: const TextStyle(
-                                              fontSize: 11,
-                                              color: Colors.black54),
+                                          fontSize: 11,
+                                          color: Colors.green,
                                         ),
                                       ),
-                                  ],
+                                      if ((a.agentReferalName ?? '').isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: 2,
+                                          ),
+                                          child: Text(
+                                            "Upline: ${a.agentReferalName}",
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.black54,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              _Cell(
-                                width: _wContact,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(a.contactNumber,
-                                        style: const TextStyle(fontSize: 12)),
-                                    const SizedBox(height: 2),
-                                    Text(a.email,
+                                _Cell(
+                                  width: _wContact,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        a.contactNumber,
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        a.email,
                                         style: const TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.black54)),
-                                  ],
+                                          fontSize: 11,
+                                          color: Colors.black54,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              _Cell(
-                                width: _wMap,
-                                child: Wrap(
-                                  spacing: 6,
-                                  runSpacing: 6,
-                                  children: [
-                                    _chip("${a.ventureName} • ${a.ventureLocation}"),
-                                    _chip("${a.branchName} • ${a.location}"),
-                                  ],
+                                _Cell(
+                                  width: _wMap,
+                                  child: Wrap(
+                                    spacing: 6,
+                                    runSpacing: 6,
+                                    children: [
+                                      _chip(
+                                        "${a.ventureName} • ${a.ventureLocation}",
+                                      ),
+                                      _chip("${a.branchName} • ${a.location}"),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              _Cell(
-                                width: _wActions,
-                                child: Wrap(
-                                  spacing: 6,
-                                  children: [
-                                    _actionButton(
-                                      iconPath: 'lib/icons/down-arrow.png',
-                                      label: 'Receipt',
-                                      onTap: () {},
-                                    ),
-                                    _actionButton(
-                                      iconPath: 'lib/icons/edit-button.png',
-                                      label: 'Edit',
-                                      onTap: () {},
-                                    ),
-                                  ],
+                                _Cell(
+                                  width: _wActions,
+                                  child: Wrap(
+                                    spacing: 6,
+                                    children: [
+                                      _actionButton(
+                                        iconPath: 'lib/icons/down-arrow.png',
+                                        label: 'Receipt',
+                                        onTap: () {},
+                                      ),
+                                      _actionButton(
+                                        iconPath: 'lib/icons/edit-button.png',
+                                        label: 'Edit',
+                                        onTap: () => onEdit(a), // <— OPEN EDIT
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        if (i != agents.length - 1)
-                          const Divider(
-                              thickness: 0.25, color: Colors.green, height: 0),
-                      ],
-                    );
-                  }),
-                ],
+                          if (i != agents.length - 1)
+                            const Divider(
+                              thickness: 0.25,
+                              color: Colors.green,
+                              height: 0,
+                            ),
+                        ],
+                      );
+                    }),
+                  ],
+                ),
               ),
             ),
-          ),
-        ]),
+          ],
+        ),
       ),
     );
   }
@@ -451,8 +759,10 @@ class _AgentsTable extends StatelessWidget {
       color: Colors.green.shade50,
       borderRadius: BorderRadius.circular(50),
     ),
-    child:
-    Text(text, style: const TextStyle(fontSize: 11, color: Colors.green)),
+    child: Text(
+      text,
+      style: const TextStyle(fontSize: 11, color: Colors.green),
+    ),
   );
 
   static Widget _actionButton({
@@ -484,8 +794,10 @@ class _AgentsTable extends StatelessWidget {
 
 class _HeaderCell extends StatelessWidget {
   const _HeaderCell({required this.width, required this.text});
+
   final double width;
   final String text;
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -497,11 +809,12 @@ class _HeaderCell extends StatelessWidget {
 
 class _Cell extends StatelessWidget {
   const _Cell({required this.width, required this.child});
+
   final double width;
   final Widget child;
+
   @override
-  Widget build(BuildContext context) =>
-      SizedBox(width: width, child: child);
+  Widget build(BuildContext context) => SizedBox(width: width, child: child);
 }
 
 // ---------- model ----------
