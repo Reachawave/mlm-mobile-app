@@ -1,449 +1,407 @@
 import 'package:flutter/material.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:new_project/utils/AuthApi.dart';
 import 'mainpage.dart';
 
-
-class withdrawpage extends StatelessWidget {
-  const withdrawpage({super.key});
+class WithdrawPage extends StatelessWidget {
+  const WithdrawPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return withdawbody();
+    return const WithdrawBody();
   }
 }
 
-class withdawbody extends StatefulWidget {
-  const withdawbody({super.key});
+class WithdrawBody extends StatefulWidget {
+  const WithdrawBody({super.key});
 
   @override
-  State<withdawbody> createState() => _withdawbodyState();
+  State<WithdrawBody> createState() => _WithdrawBodyState();
 }
 
-class _withdawbodyState extends State<withdawbody> {
+class _WithdrawBodyState extends State<WithdrawBody> {
+  final TextEditingController _amountController = TextEditingController();
+  double _balance = 0.0;
+  List<dynamic> _withdrawals = [];
+  bool _loading = true;
+
+  final AuthApi _api = AuthApi();
+  String? _agentId;
+  String? _token;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeAndLoad();
+  }
+
+  Future<void> _initializeAndLoad() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _agentId = prefs.getInt("agentId")?.toString();
+      _token = prefs.getString("token");
+
+      debugPrint("DEBUG: agentId=$_agentId, token=$_token");
+
+      if (_agentId == null || _token == null) {
+        debugPrint("ERROR: agentId or token is null");
+        _showError("Session expired. Please login again.");
+        setState(() => _loading = false);
+        return;
+      }
+
+      await _loadWithdrawData();
+    } catch (e, st) {
+      debugPrint("EXCEPTION in _initializeAndLoad: $e");
+      debugPrint("STACKTRACE: $st");
+      setState(() => _loading = false);
+      _showError("Initialization failed: $e");
+    }
+  }
+
+  Future<void> _loadWithdrawData() async {
+    setState(() => _loading = true);
+    try {
+      final balanceRes = await _api.fetchBalance(
+        agentId: _agentId!,
+        token: _token!,
+      );
+      final historyRes = await _api.fetchWithdrawalHistory(
+        agentId: _agentId!,
+        token: _token!,
+      );
+
+      debugPrint("DEBUG: Balance response data = ${balanceRes.data}");
+      debugPrint("DEBUG: History response data = ${historyRes.data}");
+
+      setState(() {
+        final balanceData = balanceRes.data ?? {};
+        final historyData = historyRes.data ?? {};
+
+        // If data structure is different, these might be null
+        final bal = balanceData["withdrawlDetails"]?["balance"];
+        if (bal is num) {
+          _balance = bal.toDouble();
+        } else {
+          debugPrint("WARNING: balanceData['withdrawlDetails']['balance'] is not a num: $bal");
+        }
+
+        final list = historyData["withdrawlDetails"];
+        if (list is List) {
+          _withdrawals = list;
+        } else {
+          debugPrint("WARNING: historyData['withdrawlDetails'] is not a List: $list");
+          _withdrawals = [];
+        }
+
+        _loading = false;
+      });
+    } catch (e, st) {
+      debugPrint("EXCEPTION in _loadWithdrawData: $e");
+      debugPrint("STACKTRACE: $st");
+      setState(() => _loading = false);
+      _showError("Error loading data: $e");
+    }
+  }
+
+  Future<void> _submitWithdrawal() async {
+    final amountText = _amountController.text.trim();
+    final amount = double.tryParse(amountText.replaceAll(',', ''));
+
+    if (amount == null || amount <= 0) {
+      _showError("Enter a valid amount");
+      return;
+    }
+
+    if (_agentId == null || _token == null) {
+      _showError("Session expired. Please login again.");
+      return;
+    }
+
+    try {
+      debugPrint("DEBUG: Requesting withdrawal: amount = $amount");
+      final response = await _api.requestWithdrawal(
+        agentId: _agentId!,
+        token: _token!,
+        amount: amount,
+      );
+      debugPrint("DEBUG: Withdrawal response = ${response.data}, status = ${response.status}");
+
+      _showSuccess("Withdrawal request sent");
+      _amountController.clear();
+      _loadWithdrawData();
+    } catch (e, st) {
+      debugPrint("EXCEPTION in _submitWithdrawal: $e");
+      debugPrint("STACKTRACE: $st");
+      _showError("Failed to request withdrawal: $e");
+    }
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.red),
+    );
+  }
+
+  void _showSuccess(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.green),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-
-    final List<Map<String, String>> data = [
-      {
-
-        "time": "19:45:00",
-        "amount": "2,00,000",
-        "date": "1/08/2025,",
-        "status": "Pending",
-      },
-      {
-
-        "time": "4:06:45",
-        "amount": "1,50,000",
-        "date": "5/08/2025,",
-        "status": "Approved",
-      },
-      {
-        "time": "11:06:45",
-        "amount": "75,000",
-        "date": "10/08/2025,",
-        "status": "Declined",
-      },
-      {
-
-        "time": "10:05:00",
-        "amount": "2,00,000",
-        "date": "1/08/2025,",
-        "status": "Pending",
-      },
-      {
-        "time": "18:24:23",
-        "amount": "1,50,000",
-        "date": "5/08/2025,",
-        "status": "Approved",
-      },
-      {
-
-        "time": "8:33:00",
-        "amount": "75,000",
-        "date": "10/08/2025,",
-        "status": "Declined",
-      },
-      // Add more rows as needed
-    ];
+    if (_loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Container(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => Agentdashboardmainpage(initialIndex: 0), // 👈 Withdraw tab
-                          ),
-                        );
-                      },
-                      child: Container(
-                        height: 45,
-                        width: 45,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black12, width: 1.0),
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(
-                            10.0,
-                          ), // Uniform radius for all corners
-                        ),
-                        child: Container(
-                          height: 8,
-                          child: Image.asset(
-                            'lib/icons/back-arrow.png',
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 20.0),
-                    Text(
-                      "Withdraw Funds",
-                      style: TextStyle(
-                        fontSize: 24.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 30.0),
-                Container(
-                  height: 150,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.green, // background color
-                    border: Border.all(
-                      color: Colors.green, // border color
-                      width: 1, // border thickness
-                    ),
-                    borderRadius: BorderRadius.circular(20), // 👈 circular border radius
-                  ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-
-                          Text("Available Balance",style: TextStyle(color: Colors.white,fontSize: 24.0),),
-                          Row(
-                            children: [
-                              Container(
-                                height: 30.0,
-                                child: Image.asset(
-                                  "lib/icons/rupee-indian.png",
-                                  color: Colors.white,
-                                ),
-                              ),
-                              SizedBox(width: 5.0),
-                              Text("0",style: TextStyle(color: Colors.white,fontSize: 50.0,fontWeight: FontWeight.bold),),
-                            ],
-                          )
-                        ],
-
-                      ),
-                    ),
-
-                ),
-                SizedBox(height: 20.0),
-                Container(
-                  height: 280,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white, // background color
-                    border: Border.all(
-                      color: Colors.grey, // border color
-                      width: 1, // border thickness
-                    ),
-                    borderRadius: BorderRadius.circular(20), // 👈 circular border radius
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Request Withdrawal",style: TextStyle(color: Colors.black,fontSize: 26.0,fontWeight: FontWeight.bold),),
-                        Text("Enter the amount you wish to withdraw",
-                          style: TextStyle(color: Colors.green,fontSize: 16.0),),
-                        SizedBox(height: 20.0),
-                        Row(
-                          children: [
-                            Text(
-                              "Amount to withdraw",
-                              style: TextStyle(fontSize: 16.0, color: Colors.black),
-                            ),
-                            SizedBox(width: 5.0),
-                            Text(
-                              "(",
-                              style: TextStyle(fontSize: 16.0, color: Colors.black),
-                            ),
-                            Container(
-                              height: 13.0,
-                              child: Image.asset(
-                                "lib/icons/rupee-indian.png",
-                                color: Colors.black,
-                              ),
-                            ),
-                            Text(
-                              ")",
-                              style: TextStyle(fontSize: 16.0, color: Colors.black),
-                            ),
-
-                          ],
-                        ),
-                        SizedBox(height: 6.0),
-                        TextField(
-                          // controller: emailController,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(
-                                  5,
-                                ), // 👈 rectangle with rounded corners
-                              ),
-                            ),
-                            hintText: "e.g.,5000",
-                            hintStyle: TextStyle(
-                              color: Colors.green,
-                              fontSize: 20,
-                            ),
-
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 10, // 👈 height of TextField
-                              horizontal: 20,
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 20.0),
-                        SizedBox(
-                          width:
-                          double.infinity, // take full available width
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors
-                                  .green, // 👈 button background color
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  5,
-                                ), // 👈 border radius
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 10,
-                              ), // taller button
-                            ),
-                            onPressed: () {
-
-                            },
-                            child:  Row(
-                                 mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  height: 20.0,
-                                  child: Image.asset(
-                                    "lib/icons/upload.png",
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                SizedBox(width: 10.0),
-                                Text("Request Withdrawal",style: TextStyle(color: Colors.white,fontSize: 20.0),),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                      ],
-
-                    ),
-                  ),
-
-                ),
-                SizedBox(height: 20.0),
-                Container(
-                  height: 300,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(
-                      color: Colors.grey,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              height: 23.0,
-                              child: Image.asset(
-                                "lib/icons/history.png",
-                                color: Colors.black,
-                              ),
-                            ),
-                            const SizedBox(width: 10.0),
-                            const Text(
-                              "Withdrawal History",
-                              style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 26.0,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                        const Text(
-                          "A log of your past Withdrawal requests",
-                          style: TextStyle(color: Colors.green, fontSize: 16.0),
-                        ),
-                        const SizedBox(height: 20.0),
-
-                        // 👇 ListView takes remaining space and scrolls
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: data.length,
-                            itemBuilder: (BuildContext context, int index) {
-                              final item = data[index];
-                              final time = item["time"]!;
-                              final amount = item["amount"]!;
-                              final date = item["date"]!;
-                              final status = item["status"]!;
-
-                              return Column(
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween, // 👈 equal spacing
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      // LEFT SIDE (amount + date + time)
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Container(
-                                                height: 15.0,
-                                                child: Image.asset(
-                                                  "lib/icons/rupee-indian.png",
-                                                  color: Colors.black,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 5),
-                                              Text(
-                                                amount,
-                                                style: const TextStyle(
-                                                  fontSize: 16.0,
-                                                  color: Colors.black,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          Row(
-                                            children: [
-                                              Text(
-                                                date,
-                                                style: const TextStyle(
-                                                  fontSize: 12.0,
-                                                  color: Colors.green,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 5),
-                                              Text(
-                                                time,
-                                                style: const TextStyle(
-                                                  fontSize: 12.0,
-                                                  color: Colors.green,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-
-                                      // RIGHT SIDE (status badge)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: getStatusContainerColor(status),
-                                          borderRadius: BorderRadius.circular(50),
-                                        ),
-                                        child: Text(
-                                          status,
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w600,
-                                            color: getStatusTextColor(status),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 20.0),
-                                ],
-                              );
-                            },
-                          ),
-                        )
-
-                      ],
-                    ),
-                  ),
-                )
-
-
-              ],
-            ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(context),
+              const SizedBox(height: 30),
+              _buildBalanceCard(),
+              const SizedBox(height: 20),
+              _buildRequestForm(),
+              const SizedBox(height: 20),
+              _buildHistoryCard(),
+            ],
           ),
         ),
       ),
     );
   }
-}
 
+  Widget _buildHeader(BuildContext context) {
+    return Row(
+      children: [
+        InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (c) => Agentdashboardmainpage(initialIndex: 0),
+              ),
+            );
+          },
+          child: Container(
+            height: 45,
+            width: 45,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.black12),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Image.asset('lib/icons/back-arrow.png', color: Colors.black),
+          ),
+        ),
+        const SizedBox(width: 20),
+        const Text(
+          "Withdraw Funds",
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
 
+  Widget _buildBalanceCard() {
+    return Container(
+      height: 150,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.green,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text("Available Balance", style: TextStyle(color: Colors.white, fontSize: 24)),
+          Row(
+            children: [
+              Image.asset("lib/icons/rupee-indian.png", height: 30, color: Colors.white),
+              const SizedBox(width: 5),
+              Text(
+                _balance.toStringAsFixed(2),
+                style: const TextStyle(color: Colors.white, fontSize: 50, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
+  Widget _buildRequestForm() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey),
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Request Withdrawal", style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          const Text("Enter the amount you wish to withdraw", style: TextStyle(color: Colors.green)),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              const Text("Amount to withdraw", style: TextStyle(fontSize: 16)),
+              const SizedBox(width: 5),
+              Image.asset("lib/icons/rupee-indian.png", height: 13),
+            ],
+          ),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _amountController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              hintText: "e.g., 5000",
+              hintStyle: TextStyle(color: Colors.green),
+              border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))),
+              contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _submitWithdrawal,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset("lib/icons/upload.png", height: 20, color: Colors.white),
+                  const SizedBox(width: 10),
+                  const Text("Request Withdrawal", style: TextStyle(fontSize: 20)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-// Helper to get background color
-Color getStatusContainerColor(String status) {
-  switch (status.toLowerCase()) {
-    case "approved":
-      return Colors.green;
-    case "declined":
-      return Colors.red;
-    case "pending":
-      return Colors.grey;
-    default:
-      return Colors.grey.shade300;
+  Widget _buildHistoryCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      height: 300,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey),
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Image.asset("lib/icons/history.png", height: 23),
+              const SizedBox(width: 10),
+              const Text("Withdrawal History", style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const Text("A log of your past Withdrawal requests", style: TextStyle(color: Colors.green)),
+          const SizedBox(height: 20),
+          Expanded(
+            child: _withdrawals.isEmpty
+                ? const Center(child: Text("No history found."))
+                : ListView.builder(
+              itemCount: _withdrawals.length,
+              itemBuilder: (context, idx) {
+                final item = _withdrawals[idx];
+                final amount = item["withdrawlAmount"]?.toString() ?? "0";
+                final date = item["raisedDate"] ?? '';
+                final status = item["status"] ?? 'Unknown';
+
+                return Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Image.asset("lib/icons/rupee-indian.png", height: 15),
+                                const SizedBox(width: 5),
+                                Text(
+                                  amount,
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                            Text(date, style: const TextStyle(color: Colors.green, fontSize: 12)),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: getStatusContainerColor(status),
+                            borderRadius: BorderRadius.circular(50),
+                          ),
+                          child: Text(
+                            status,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: getStatusTextColor(status),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                );
+              },
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  // Helpers for status color
+  Color getStatusContainerColor(String status) {
+    switch (status.toLowerCase()) {
+      case "approved":
+        return Colors.green;
+      case "declined":
+        return Colors.red;
+      case "pending":
+        return Colors.grey;
+      default:
+        return Colors.grey.shade300;
+    }
+  }
+
+  Color getStatusTextColor(String status) {
+    switch (status.toLowerCase()) {
+      case "approved":
+      case "declined":
+        return Colors.white;
+      case "pending":
+        return Colors.black;
+      default:
+        return Colors.black;
+    }
   }
 }
-
-// Helper to get text color
-Color getStatusTextColor(String status) {
-  switch (status.toLowerCase()) {
-    case "approved":
-    case "declined":
-      return Colors.white;
-    case "pending":
-      return Colors.black;
-    default:
-      return Colors.black;
-  }
-}
-
-
-

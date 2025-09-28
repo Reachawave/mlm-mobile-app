@@ -243,7 +243,7 @@ class _Prefs {
 
     final role = loginData["role"] as String?;
     final id = _asInt(loginData["id"]);
-    final agentId = _asInt(loginData["agentId"]);
+    final agentId = loginData["agentId"] as int;
     final email = loginData["email"] as String?;
     final username = loginData["username"] as String?;
     final token = loginData["token"] as String?;
@@ -271,6 +271,6 @@ class _Prefs {
     final prefs = await SharedPreferences.getInstance();
     final a = prefs.getInt("agentId");
     if (a != null) return a;
-    return prefs.getInt("optId");
+    return prefs.getInt("agentId");
   }
 }
