@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:new_project/widgets/app_shell.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_project/utils/AuthApi.dart';
@@ -9,9 +10,14 @@ import 'package:new_project/utils/diff_utils.dart';
 class ManageAgentPage extends StatelessWidget {
   const ManageAgentPage({super.key});
 
+  // @override
+  // Widget build(BuildContext context) =>
+  //     const Scaffold(body: ManageAgentPageBody());
+
   @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: ManageAgentPageBody());
+  Widget build(BuildContext context) {
+    return const AppShell(title: 'Agents', body: ManageAgentPageBody());
+  }
 }
 
 class ManageAgentPageBody extends StatefulWidget {
@@ -109,7 +115,118 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
     }
   }
 
-  // ---------- EDIT: open modal, submit PUT /agent/update/mobile/{id} ----------
+  // ---------- VIEW: eye icon -> read-only details dialog ----------
+  Future<void> _showAgentDetails(_Agent a) async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        TextStyle h(String t) =>
+            const TextStyle(fontWeight: FontWeight.w600, color: Colors.black54);
+        Widget row(String label, String value) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(width: 140, child: Text(label, style: h(label))),
+              const SizedBox(width: 10),
+              Expanded(child: Text(value.isEmpty ? '-' : value)),
+            ],
+          ),
+        );
+
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.visibility, color: Colors.green),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Agent Details (${a.referalId})',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Divider(height: 1),
+                    const SizedBox(height: 12),
+
+                    // Basic
+                    row('Name', a.name),
+                    row('Other Name', a.otherName),
+                    row('Father/Spouse Name', a.fatherName),
+                    row('Email', a.email),
+                    row('Phone', a.contactNumber),
+                    row('Address', a.address),
+
+                    const SizedBox(height: 8),
+                    const Divider(height: 1),
+                    const SizedBox(height: 8),
+
+                    // IDs
+                    row('Referral ID', a.referalId),
+                    row('Upline', a.agentReferalName ?? ''),
+                    row('Aadhar', a.aadharNo),
+                    row('PAN', a.panNo),
+
+                    const SizedBox(height: 8),
+                    const Divider(height: 1),
+                    const SizedBox(height: 8),
+
+                    // Bank
+                    row('Bank Name', a.bankName),
+                    row('IFSC', a.ifscCode),
+                    row('Account No', a.accountNo),
+                    row('A/C Holder', a.accountHolderName),
+
+                    const SizedBox(height: 8),
+                    const Divider(height: 1),
+                    const SizedBox(height: 8),
+
+                    // Mappings
+                    row('Venture', '${a.ventureName} • ${a.ventureLocation}'),
+                    row('Branch', '${a.branchName} • ${a.location}'),
+
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        'Created: ${a.createdAt}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ---------- EDIT: open modal, submit only changed fields ----------
   Future<void> _openEditDialog(_Agent a) async {
     final formKey = GlobalKey<FormState>();
 
@@ -123,6 +240,7 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
     final ifscCode = TextEditingController(text: a.ifscCode);
     final accountNo = TextEditingController(text: a.accountNo);
     final accountHolderName = TextEditingController(text: a.accountHolderName);
+    final fatherName = TextEditingController(text: a.fatherName);
 
     bool submitting = false;
     String? errorText;
@@ -141,7 +259,6 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
             Future<void> submit() async {
               if (!formKey.currentState!.validate()) return;
 
-              // Build original vs edited maps
               final original = <String, dynamic>{
                 "name": a.name,
                 "aadharNo": a.aadharNo,
@@ -152,6 +269,7 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
                 "accountHolderName": a.accountHolderName,
                 "otherName": a.otherName,
                 "panNo": a.panNo,
+                "fatherName": a.fatherName,
               };
 
               final edited = <String, dynamic>{
@@ -163,12 +281,11 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
                 "accountNo": accountNo.text,
                 "accountHolderName": accountHolderName.text,
                 "otherName": otherName.text,
+                "fatherName":fatherName.text,
                 "panNo": panNo.text.toUpperCase(),
               };
 
-              // Only send changed (and non-null) fields
               final diff = changedFields(original, edited);
-
               if (diff.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('No changes to save')),
@@ -243,7 +360,6 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
 
                           LayoutBuilder(
                             builder: (c, con) {
-                              final twoCols = con.maxWidth > 460;
                               double colW(bool full) =>
                                   full ? con.maxWidth : (con.maxWidth - 12) / 2;
 
@@ -265,6 +381,13 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
                                     child: TextFormField(
                                       controller: otherName,
                                       decoration: dec('Other Name'),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: colW(false),
+                                    child: TextFormField(
+                                      controller: fatherName,
+                                      decoration: dec('Father Name'),
                                     ),
                                   ),
                                   SizedBox(
@@ -390,36 +513,7 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
 
     return Scaffold(
       drawer: const AppDrawer(),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.black12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Builder(
-              builder: (context) => IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
-            ),
-          ),
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: _loading ? null : _loadAgents,
-            icon: const Icon(Icons.refresh, color: Colors.black87),
-          ),
-          const SizedBox(width: 4),
-        ],
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, color: Colors.black12),
-        ),
-      ),
+
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -433,323 +527,201 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
               onRefresh: _loadAgents,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          InkWell(
-                            onTap: () => Navigator.pop(context),
-                            child: Container(
-                              height: 45,
-                              width: 45,
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.black12),
-                                borderRadius: BorderRadius.circular(10),
-                                color: Colors.white,
-                              ),
-                              child: Center(
-                                child: Image.asset(
-                                  'lib/icons/back-arrow.png',
-                                  color: Colors.black,
-                                  height: 18,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 20),
-                          const Text(
-                            "Manage Agents",
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Search + Create
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _search,
-                              focusNode: _focusNode,
-                              onChanged: (_) => setState(() {}),
-                              decoration: InputDecoration(
-                                hintText:
-                                    'Search by name / referral / phone...',
-                                prefixIcon: const Icon(Icons.search),
-                                contentPadding: const EdgeInsets.all(10),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Colors.green,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          InkWell(
-                            onTap: _goToCreateAgent,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.green,
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: Colors.green,
-                                  width: 0.5,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Image.asset(
-                                    'lib/icons/add-friend.png',
-                                    height: 14,
-                                    color: Colors.white,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  const Text(
-                                    "Create Agent",
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Table card (fixed-width, horizontal scroll)
-                      _AgentsTable(
-                        agents: filtered,
-                        onEdit: _openEditDialog, // <— wired here
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-    );
-  }
-}
-
-// ====== Fixed-width, horizontally scrollable agents table ======
-
-class _AgentsTable extends StatelessWidget {
-  const _AgentsTable({required this.agents, required this.onEdit});
-
-  final List<_Agent> agents;
-  final Future<void> Function(_Agent) onEdit;
-
-  static const double _wAgent = 300;
-  static const double _wContact = 220;
-  static const double _wMap = 340; // Venture • Branch
-  static const double _wActions = 220;
-
-  @override
-  Widget build(BuildContext context) {
-    final totalWidth = _wAgent + _wContact + _wMap + _wActions;
-
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.black12, width: 1),
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: const [
-                Icon(Icons.people_outlined, size: 30, color: Colors.green),
-                SizedBox(width: 10),
-                Text(
-                  "Agents",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const Text(
-              "Manage and view all registered agents and their referral upline",
-              style: TextStyle(fontSize: 12, color: Colors.green),
-            ),
-            const SizedBox(height: 16),
-
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minWidth: totalWidth),
+                padding: const EdgeInsets.all(16),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header
-                    const Padding(
-                      padding: EdgeInsets.symmetric(
-                        vertical: 6.0,
-                        horizontal: 4,
-                      ),
-                      child: Row(
-                        children: [
-                          _HeaderCell(width: _wAgent, text: "Agent"),
-                          _HeaderCell(width: _wContact, text: "Contact"),
-                          _HeaderCell(width: _wMap, text: "Venture • Branch"),
-                          _HeaderCell(width: _wActions, text: "Actions"),
-                        ],
-                      ),
+                    // Back + Title
+                    Row(
+                      children: [
+                        InkWell(
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            height: 45,
+                            width: 45,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.black12),
+                              borderRadius: BorderRadius.circular(10),
+                              color: Colors.white,
+                            ),
+                            child: const Icon(Icons.arrow_back),
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        const Text(
+                          "Manage Agents",
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
-                    const Divider(
-                      thickness: 0.3,
-                      color: Colors.green,
-                      height: 0,
-                    ),
+                    const SizedBox(height: 20),
 
-                    // Rows
-                    ...List.generate(agents.length, (i) {
-                      final a = agents[i];
-                      return Column(
-                        children: [
-                          Padding(
+                    // Search + Create
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _search,
+                            focusNode: _focusNode,
+                            onChanged: (_) => setState(() {}),
+                            decoration: InputDecoration(
+                              hintText: 'Search by name / referral / phone...',
+                              prefixIcon: const Icon(Icons.search),
+                              contentPadding: const EdgeInsets.all(10),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Colors.green,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: _goToCreateAgent,
+                          child: Container(
                             padding: const EdgeInsets.symmetric(
-                              vertical: 8.0,
-                              horizontal: 4,
+                              horizontal: 10,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: Colors.green,
+                                width: 0.5,
+                              ),
                             ),
                             child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _Cell(
-                                  width: _wAgent,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        a.name,
-                                        style: const TextStyle(fontSize: 13),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        a.referalId,
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.green,
-                                        ),
-                                      ),
-                                      if ((a.agentReferalName ?? '').isNotEmpty)
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            top: 2,
-                                          ),
-                                          child: Text(
-                                            "Upline: ${a.agentReferalName}",
-                                            style: const TextStyle(
-                                              fontSize: 11,
-                                              color: Colors.black54,
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(
+                                  Icons.person_add,
+                                  color: Colors.white,
+                                  size: 16,
                                 ),
-                                _Cell(
-                                  width: _wContact,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        a.contactNumber,
-                                        style: const TextStyle(fontSize: 12),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        a.email,
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.black54,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                _Cell(
-                                  width: _wMap,
-                                  child: Wrap(
-                                    spacing: 6,
-                                    runSpacing: 6,
-                                    children: [
-                                      _chip(
-                                        "${a.ventureName} • ${a.ventureLocation}",
-                                      ),
-                                      _chip("${a.branchName} • ${a.location}"),
-                                    ],
-                                  ),
-                                ),
-                                _Cell(
-                                  width: _wActions,
-                                  child: Wrap(
-                                    spacing: 6,
-                                    children: [
-                                      _actionButton(
-                                        iconPath: 'lib/icons/down-arrow.png',
-                                        label: 'Receipt',
-                                        onTap: () {},
-                                      ),
-                                      _actionButton(
-                                        iconPath: 'lib/icons/edit-button.png',
-                                        label: 'Edit',
-                                        onTap: () => onEdit(a), // <— OPEN EDIT
-                                      ),
-                                    ],
+                                SizedBox(width: 6),
+                                Text(
+                                  "Create Agent",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          if (i != agents.length - 1)
-                            const Divider(
-                              thickness: 0.25,
-                              color: Colors.green,
-                              height: 0,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // --------- SIMPLE VERTICAL LIST (no horizontal scroll) ---------
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, i) {
+                        final a = filtered[i];
+
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.black12),
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
                             ),
-                        ],
-                      );
-                    }),
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.green.shade50,
+                              child: const Icon(
+                                Icons.person,
+                                color: Colors.green,
+                              ),
+                            ),
+                            title: Text(
+                              a.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 2),
+                                Text(
+                                  a.referalId,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${a.contactNumber} • ${a.email}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 6,
+                                  children: [
+                                    _chip(
+                                      "${a.ventureName} • ${a.ventureLocation}",
+                                    ),
+                                    _chip("${a.branchName} • ${a.location}"),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            trailing: Wrap(
+                              spacing: 6,
+                              children: [
+                                IconButton(
+                                  tooltip: 'View details',
+                                  icon: const Icon(Icons.remove_red_eye),
+                                  onPressed: () => _showAgentDetails(a),
+                                ),
+                                IconButton(
+                                  tooltip: 'Edit',
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () => _openEditDialog(a),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -764,60 +736,9 @@ class _AgentsTable extends StatelessWidget {
       style: const TextStyle(fontSize: 11, color: Colors.green),
     ),
   );
-
-  static Widget _actionButton({
-    required String iconPath,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: Colors.grey.shade400, width: 0.8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset(iconPath, height: 14, color: Colors.black87),
-            const SizedBox(width: 6),
-            Text(label, style: const TextStyle(fontSize: 12)),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
-class _HeaderCell extends StatelessWidget {
-  const _HeaderCell({required this.width, required this.text});
-
-  final double width;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      child: Text(text, style: const TextStyle(color: Colors.green)),
-    );
-  }
-}
-
-class _Cell extends StatelessWidget {
-  const _Cell({required this.width, required this.child});
-
-  final double width;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(width: width, child: child);
-}
-
-// ---------- model ----------
+// ---------- model (unchanged) ----------
 class _Agent {
   final int id;
   final String name;
@@ -837,6 +758,7 @@ class _Agent {
   final String accountNo;
   final String ifscCode;
   final String accountHolderName;
+  final String fatherName;
   final String panNo;
   final String aadharNo;
   final int agentReferalId;
@@ -863,6 +785,7 @@ class _Agent {
     required this.accountNo,
     required this.ifscCode,
     required this.accountHolderName,
+    required this.fatherName,
     required this.panNo,
     required this.aadharNo,
     required this.agentReferalId,
@@ -895,6 +818,7 @@ class _Agent {
     agentReferalId: (j['agentReferalId'] ?? 0) as int,
     agentReferalName: (j['agentReferalName'])?.toString(),
     otherName: (j['otherName'] ?? '').toString(),
+    fatherName: (j['fatherName'] ?? '').toString(),
     createdAt: (j['createdAt'] ?? '').toString(),
   );
 }

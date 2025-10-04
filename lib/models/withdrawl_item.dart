@@ -1,23 +1,37 @@
-class WithdrawlItem {
-  final int id;
+class WithdrawlBalanceItem {
   final int agentId;
   final String name;
   final String referalId;
   final String email;
-  final double amount;
-  final String status;
-  final String raisedDateStr;
+  final double balanceAmount;
+  final String bankName;
+  final String accountNumber;
+  final String ifscCode;
+  final String accountHolderName;
 
-  const WithdrawlItem({
-    required this.id,
+  const WithdrawlBalanceItem({
     required this.agentId,
     required this.name,
     required this.referalId,
     required this.email,
-    required this.amount,
-    required this.status,
-    required this.raisedDateStr,
+    required this.balanceAmount,
+    required this.bankName,
+    required this.accountNumber,
+    required this.ifscCode,
+    required this.accountHolderName,
   });
 
-  DateTime? get raisedDate => DateTime.tryParse(raisedDateStr);
+  factory WithdrawlBalanceItem.fromJson(Map<String, dynamic> j) {
+    return WithdrawlBalanceItem(
+      agentId: (j['agentId'] ?? 0) as int,
+      name: (j['name'] ?? '').toString(),
+      referalId: (j['referalId'] ?? '').toString(),
+      email: (j['email'] ?? '').toString(),
+      balanceAmount: (j['balanceAmount'] ?? 0).toDouble(),
+      bankName: (j['bankName'] ?? '').toString(),
+      accountNumber: (j['accountNumber'] ?? '').toString(),
+      ifscCode: (j['ifscCode'] ?? '').toString(),
+      accountHolderName: (j['accountHolderName'] ?? '').toString(),
+    );
+  }
 }

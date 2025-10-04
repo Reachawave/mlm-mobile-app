@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:new_project/widgets/app_shell.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_project/utils/AuthApi.dart';
@@ -7,9 +8,14 @@ import 'package:new_project/widgets/app_drawer.dart';
 class TotalRevenuePage extends StatelessWidget {
   const TotalRevenuePage({super.key});
 
+  // @override
+  // Widget build(BuildContext context) {
+  //   return const Scaffold(body: TotalRevenueBody());
+  // }
+
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(body: TotalRevenueBody());
+    return const AppShell(title: 'Investment', body: TotalRevenueBody());
   }
 }
 
@@ -103,38 +109,7 @@ class _TotalRevenueBodyState extends State<TotalRevenueBody> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawerEnableOpenDragGesture: false,
-      drawer: const AppDrawer(), // ✅ unified sidebar
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.black12),
-              borderRadius: BorderRadius.circular(10),
-              color: Colors.white,
-            ),
-            child: Builder(
-              builder: (context) => IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
-            ),
-          ),
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: _loading ? null : _loadInvestments,
-            icon: const Icon(Icons.refresh, color: Colors.black87),
-          ),
-          const SizedBox(width: 4),
-        ],
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, color: Colors.black12),
-        ),
-      ),
+      drawer: const AppDrawer(),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null

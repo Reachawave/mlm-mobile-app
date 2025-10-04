@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:new_project/widgets/app_shell.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -10,8 +11,13 @@ import 'package:new_project/widgets/app_drawer.dart'; // <-- use your AppDrawer
 class Reportspage extends StatelessWidget {
   const Reportspage({super.key});
 
+  // @override
+  // Widget build(BuildContext context) => const Scaffold(body: ReportspageBody());
+
   @override
-  Widget build(BuildContext context) => const Scaffold(body: ReportspageBody());
+  Widget build(BuildContext context) {
+    return const AppShell(title: 'Reports', body: ReportspageBody());
+  }
 }
 
 /// Reports page body (stateful)
@@ -337,8 +343,7 @@ class _ReportspageBodyState extends State<ReportspageBody> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: const AppDrawer(), // <-- use your shared drawer
-      appBar: _buildAppBar(),
+      drawer: const AppDrawer(),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null

@@ -231,6 +231,7 @@ class AuthApi {
     required String otherName,
     required String accountHolderName,
     required String panNo,
+    required String fatherName,
     required int count,
   }) async {
     final url = _buildUri('admin/agent/mobile/save');
@@ -252,6 +253,7 @@ class AuthApi {
         'accountHolderName': accountHolderName,
         'panNo': panNo,
         'count': count,
+        'fatherName': fatherName,
       };
 
       final res = await _client
@@ -365,6 +367,36 @@ class AuthApi {
     final url = _buildUri(
       'agent/withdrawl/view/mobile',
     ).replace(queryParameters: {'withdrawl': 'withdrawlDetails'});
+
+    try {
+      final res = await _client
+          .get(url, headers: _jsonAuthHeaders())
+          .timeout(const Duration(seconds: 20));
+
+      _log(url, res, 'GET');
+
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        return ApiResponse.fromJson(
+          jsonDecode(res.body) as Map<String, dynamic>,
+        );
+      }
+      throw ApiException(
+        res.statusCode,
+        res.body.isNotEmpty ? res.body : 'Failed to fetch agent details',
+      );
+    } on SocketException catch (e) {
+      throw ApiException(null, 'Network error: ${e.message}');
+    } on FormatException catch (e) {
+      throw ApiException(null, 'Bad response format: ${e.message}');
+    }
+  }
+
+
+
+  // ---------------- WITHDRAWL: VIEW ----------------
+  Future<ApiResponse> getWithdrawlBalanceAdmin() async {
+    final url = _buildUri(
+      'admin/mobile/withdrawl/balance');
 
     try {
       final res = await _client
@@ -672,9 +704,6 @@ class AuthApi {
     }
   }
 
-
-
-
   // ---------------- VIEW AGENT PROFILE ----------------
   Future<ApiResponse> viewAgentProfile({
     required String agentId,
@@ -683,24 +712,31 @@ class AuthApi {
     final url = _buildUri('agent/view/mobile/$agentId');
     try {
       final res = await _client
-          .get(url, headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      })
+          .get(
+            url,
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
           .timeout(const Duration(seconds: 20));
       _log(url, res, 'GET');
 
       if (res.statusCode >= 200 && res.statusCode < 300) {
-        return ApiResponse.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+        return ApiResponse.fromJson(
+          jsonDecode(res.body) as Map<String, dynamic>,
+        );
       }
-      throw ApiException(res.statusCode, res.body.isNotEmpty ? res.body : 'Failed to load profile');
+      throw ApiException(
+        res.statusCode,
+        res.body.isNotEmpty ? res.body : 'Failed to load profile',
+      );
     } on SocketException catch (e) {
       throw ApiException(null, 'Network error: ${e.message}');
     } on FormatException catch (e) {
       throw ApiException(null, 'Bad response format: ${e.message}');
     }
   }
-
 
   // ---------------- UPDATE AGENT PROFILE ----------------
   Future<ApiResponse> updateAgentProfile({
@@ -711,18 +747,27 @@ class AuthApi {
     final url = _buildUri('agent/update/mobile/$agentId');
     try {
       final res = await _client
-          .put(url, headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      }, body: jsonEncode(updateData))
+          .put(
+            url,
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode(updateData),
+          )
           .timeout(const Duration(seconds: 20));
       _log(url, res, 'PUT');
 
       if (res.statusCode >= 200 && res.statusCode < 300) {
-        return ApiResponse.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+        return ApiResponse.fromJson(
+          jsonDecode(res.body) as Map<String, dynamic>,
+        );
       }
-      throw ApiException(res.statusCode, res.body.isNotEmpty ? res.body : 'Failed to update profile');
+      throw ApiException(
+        res.statusCode,
+        res.body.isNotEmpty ? res.body : 'Failed to update profile',
+      );
     } on SocketException catch (e) {
       throw ApiException(null, 'Network error: ${e.message}');
     } on FormatException catch (e) {
@@ -730,21 +775,25 @@ class AuthApi {
     }
   }
 
-// ------------------ GET AGENT BALANCE ------------------
+  // ------------------ GET AGENT BALANCE ------------------
   Future<ApiResponse> fetchBalance({
     required String agentId,
     required String token,
   }) async {
-    final url = _buildUri('agent/withdrawl/balance/mobile/$agentId'); // Keep URL if backend uses 'withdrawl'
+    final url = _buildUri(
+      'agent/withdrawl/balance/mobile/$agentId',
+    ); // Keep URL if backend uses 'withdrawl'
 
     try {
-      final res = await _client.get(
-        url,
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      ).timeout(const Duration(seconds: 20));
+      final res = await _client
+          .get(
+            url,
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(const Duration(seconds: 20));
 
       _log(url, res, 'GET');
 
@@ -752,7 +801,10 @@ class AuthApi {
         return ApiResponse.fromJson(jsonDecode(res.body));
       }
 
-      throw ApiException(res.statusCode, res.body.isNotEmpty ? res.body : 'Failed to fetch balance');
+      throw ApiException(
+        res.statusCode,
+        res.body.isNotEmpty ? res.body : 'Failed to fetch balance',
+      );
     } on SocketException catch (e) {
       throw ApiException(null, 'Network error: ${e.message}');
     } on FormatException catch (e) {
@@ -760,7 +812,7 @@ class AuthApi {
     }
   }
 
-// ------------------ GET AGENT WITHDRAWAL HISTORY ------------------
+  // ------------------ GET AGENT WITHDRAWAL HISTORY ------------------
   Future<ApiResponse> fetchWithdrawalHistory({
     required String agentId,
     required String token,
@@ -768,13 +820,15 @@ class AuthApi {
     final url = _buildUri('agent/withdrawl/view/mobile/$agentId');
 
     try {
-      final res = await _client.get(
-        url,
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      ).timeout(const Duration(seconds: 20));
+      final res = await _client
+          .get(
+            url,
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(const Duration(seconds: 20));
 
       _log(url, res, 'GET');
 
@@ -782,7 +836,10 @@ class AuthApi {
         return ApiResponse.fromJson(jsonDecode(res.body));
       }
 
-      throw ApiException(res.statusCode, res.body.isNotEmpty ? res.body : 'Failed to fetch withdrawal history');
+      throw ApiException(
+        res.statusCode,
+        res.body.isNotEmpty ? res.body : 'Failed to fetch withdrawal history',
+      );
     } on SocketException catch (e) {
       throw ApiException(null, 'Network error: ${e.message}');
     } on FormatException catch (e) {
@@ -790,21 +847,30 @@ class AuthApi {
     }
   }
 
-// ------------------ POST AGENT WITHDRAWAL REQUEST ------------------
-  Future<ApiResponse> requestWithdrawal({
+
+  Future<ApiResponse> saveAdminWithdrawl({
     required String agentId,
     required String token,
-    required double amount,
+    required double withdrawlAmount,
+    required double totalAmount,
+    required String referenceNumber,
+    required String paymentDate, // yyyy-MM-dd
+    required String paymentMode, // e.g. 'Upi'
   }) async {
-    final url = _buildUri('agent/withdrawl/save/mobile');
+    final url = _buildUri('/admin/mobile/withdrawl/save');
 
     final body = {
       "agentId": agentId,
-      "withdrawlAmount": amount,
+      "withdrawlAmount": withdrawlAmount,
+      "totalAmount": totalAmount,
+      "referenceNumber": referenceNumber,
+      "paymentDate": paymentDate,
+      "paymentMode": paymentMode,
     };
 
     try {
-      final res = await _client.post(
+      final res = await _client
+          .post(
         url,
         headers: {
           'Accept': 'application/json',
@@ -812,7 +878,8 @@ class AuthApi {
           'Authorization': 'Bearer $token',
         },
         body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 20));
+      )
+          .timeout(const Duration(seconds: 20));
 
       _log(url, res, 'POST');
 
@@ -820,7 +887,51 @@ class AuthApi {
         return ApiResponse.fromJson(jsonDecode(res.body));
       }
 
-      throw ApiException(res.statusCode, res.body.isNotEmpty ? res.body : 'Failed to request withdrawal');
+      throw ApiException(
+        res.statusCode,
+        res.body.isNotEmpty ? res.body : 'Failed to save withdrawl (admin)',
+      );
+    } on SocketException catch (e) {
+      throw ApiException(null, 'Network error: ${e.message}');
+    } on FormatException catch (e) {
+      throw ApiException(null, 'Bad response format: ${e.message}');
+    }
+  }
+
+
+  // ------------------ POST AGENT WITHDRAWAL REQUEST ------------------
+  Future<ApiResponse> requestWithdrawal({
+    required String agentId,
+    required String token,
+    required double amount,
+  }) async {
+    final url = _buildUri('agent/withdrawl/save/mobile');
+
+    final body = {"agentId": agentId, "withdrawlAmount": amount};
+
+    try {
+      final res = await _client
+          .post(
+            url,
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 20));
+
+      _log(url, res, 'POST');
+
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        return ApiResponse.fromJson(jsonDecode(res.body));
+      }
+
+      throw ApiException(
+        res.statusCode,
+        res.body.isNotEmpty ? res.body : 'Failed to request withdrawal',
+      );
     } on SocketException catch (e) {
       throw ApiException(null, 'Network error: ${e.message}');
     } on FormatException catch (e) {
@@ -836,13 +947,15 @@ class AuthApi {
     final url = _buildUri('agent/mobile/commision/level/$agentId');
 
     try {
-      final res = await _client.get(
-        url,
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      ).timeout(const Duration(seconds: 20));
+      final res = await _client
+          .get(
+            url,
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(const Duration(seconds: 20));
 
       _log(url, res, 'GET');
 
@@ -850,7 +963,10 @@ class AuthApi {
         return ApiResponse.fromJson(jsonDecode(res.body));
       }
 
-      throw ApiException(res.statusCode, res.body.isNotEmpty ? res.body : 'Failed to fetch Network data');
+      throw ApiException(
+        res.statusCode,
+        res.body.isNotEmpty ? res.body : 'Failed to fetch Network data',
+      );
     } on SocketException catch (e) {
       throw ApiException(null, 'Network error: ${e.message}');
     } on FormatException catch (e) {
@@ -859,7 +975,8 @@ class AuthApi {
   }
 
 
-// ------------------ GET AGENT COMMISION REPORT  ------------------
+
+  // ------------------ GET AGENT COMMISION REPORT  ------------------
 
   Future<ApiResponse> fetchAgentCommissionReport({
     required String token,
@@ -868,13 +985,15 @@ class AuthApi {
     final url = _buildUri('agent/commision/view/mobile/$agentId');
 
     try {
-      final res = await _client.get(
-        url,
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      ).timeout(const Duration(seconds: 20));
+      final res = await _client
+          .get(
+            url,
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(const Duration(seconds: 20));
 
       _log(url, res, 'GET');
 
@@ -882,12 +1001,14 @@ class AuthApi {
         return ApiResponse.fromJson(jsonDecode(res.body));
       }
 
-      throw ApiException(res.statusCode, res.body.isNotEmpty ? res.body : 'Failed to fetch Commission Report');
+      throw ApiException(
+        res.statusCode,
+        res.body.isNotEmpty ? res.body : 'Failed to fetch Commission Report',
+      );
     } on SocketException catch (e) {
       throw ApiException(null, 'Network error: ${e.message}');
     } on FormatException catch (e) {
       throw ApiException(null, 'Bad response format: ${e.message}');
     }
   }
-
 }

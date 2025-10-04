@@ -1,27 +1,30 @@
+// adminpages/DashboardPage.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:new_project/adminpages/ReferrelPage.dart';
+import 'package:new_project/adminpages/ReportsPage.dart';
+import 'package:new_project/adminpages/ManageAgentsPage.dart';
+import 'package:new_project/adminpages/TotalVenturesPage.dart';
+import 'package:new_project/adminpages/ManageBranches.dart';
+import 'package:new_project/adminpages/TotalRevenuePage.dart';
+import 'package:new_project/adminpages/WithdrawalRequestPage.dart';
+import 'package:new_project/adminpages/CommisionPayoutPage.dart';
 import 'package:new_project/utils/AuthApi.dart';
+import 'package:new_project/widgets/app_shell.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 
-import 'package:new_project/widgets/app_drawer.dart';
-import 'ManageAgentsPage.dart';
-import 'TotalVenturesPage.dart';
-import 'ManageBranches.dart';
-import 'TotalRevenuePage.dart';
-import 'WithdrawalRequestPage.dart';
-import 'CommisionPayoutPage.dart';
-import 'ReportsPage.dart';
 import 'CreateAgentPage.dart';
-import 'CreateVenturePage.dart';
 import 'CreateBranchPage.dart';
+import 'CreateVenturePage.dart';
 
 class Dashboardpage extends StatelessWidget {
   const Dashboardpage({super.key});
 
   @override
-  Widget build(BuildContext context) => const Scaffold(body: DashboardBody());
+  Widget build(BuildContext context) {
+    return const AppShell(title: 'Dashboard', body: DashboardBody());
+  }
 }
 
 class DashboardBody extends StatefulWidget {
@@ -192,439 +195,386 @@ class _DashboardBodyState extends State<DashboardBody> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      drawerEnableOpenDragGesture: false,
-      drawer: const AppDrawer(),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.black12, width: 1),
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Builder(
-              builder: (context) => IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () => Scaffold.of(context).openDrawer(),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Dashboard",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 25),
+          ),
+          const SizedBox(height: 12),
+
+          // Time quick filters
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _timeChip("Today"),
+              _timeChip("This Week"),
+              _timeChip("This Month"),
+              _timeChip("All Time"),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Date range input with overlay
+          GestureDetector(
+            key: _fieldKey,
+            onTap: () => _overlayEntry == null
+                ? _showCalendar(context)
+                : _removeOverlay(),
+            child: Container(
+              height: 55,
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade400),
+                borderRadius: BorderRadius.circular(10),
               ),
-            ),
-          ),
-        ),
-        actions: [
-          SizedBox(
-            height: 25,
-            child: Image.asset('lib/icons/active.png', color: Colors.black),
-          ),
-          const SizedBox(width: 10),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: SizedBox(
-              height: 30,
-              child: Image.asset('lib/icons/user.png'),
-            ),
-          ),
-        ],
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, color: Colors.black12),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Dashboard",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 25),
-            ),
-            const SizedBox(height: 12),
-
-            // Time quick filters
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                _timeChip("Today"),
-                _timeChip("This Week"),
-                _timeChip("This Month"),
-                _timeChip("All Time"),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            // Date range input with overlay
-            GestureDetector(
-              key: _fieldKey,
-              onTap: () => _overlayEntry == null
-                  ? _showCalendar(context)
-                  : _removeOverlay(),
-              child: Container(
-                height: 55,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 15,
-                  vertical: 14,
-                ),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade400),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.calendar_today, color: Colors.black),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _selectedDateText,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: _selectedDateText == "pick a date range"
-                              ? Colors.grey
-                              : Colors.black,
-                        ),
+              child: Row(
+                children: [
+                  const Icon(Icons.calendar_today, color: Colors.black),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _selectedDateText,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: _selectedDateText == "pick a date range"
+                            ? Colors.grey
+                            : Colors.black,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
+          ),
 
-            const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-            // Metrics: loading / error / fixed-height 2-col grid
-            if (_loadingTotals)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (_totalsError != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  _totalsError!,
-                  style: const TextStyle(color: Colors.red),
-                ),
-              )
-            else
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, // two cards per row
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  mainAxisExtent:
-                      205, // ↑ bump height to eliminate 20px overflow
-                ),
-                itemCount: 8,
-                itemBuilder: (context, index) {
-                  switch (index) {
-                    case 0:
-                      return _metricCard(
-                        color: const Color(0xFF4A9782),
-                        leading: const Icon(
-                          Icons.account_balance_wallet_outlined,
-                          size: 40,
+          // Metrics: loading / error / fixed-height 2-col grid
+          if (_loadingTotals)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (_totalsError != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                _totalsError!,
+                style: const TextStyle(color: Colors.red),
+              ),
+            )
+          else
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2, // two cards per row
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                mainAxisExtent: 205,
+              ),
+              itemCount: 8,
+              itemBuilder: (context, index) {
+                switch (index) {
+                  case 0:
+                    return _metricCard(
+                      color: const Color(0xFF4A9782),
+                      leading: const Icon(
+                        Icons.account_balance_wallet_outlined,
+                        size: 40,
+                        color: Colors.white,
+                      ),
+                      title: "TOTAL REVENUE",
+                      bigValue: _moneyText(_totalRevenue),
+                      footer: Text(
+                        "$_totalVentures ventures",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const TotalRevenuePage(),
+                        ),
+                      ),
+                    );
+                  case 1:
+                    return _metricCard(
+                      color: const Color(0xFFD92C54),
+                      leading: SizedBox(
+                        height: 40,
+                        child: Image.asset(
+                          'lib/icons/coins.png',
                           color: Colors.white,
                         ),
-                        title: "TOTAL REVENUE",
-                        bigValue: _moneyText(_totalRevenue),
-                        footer: Text(
-                          "$_totalVentures ventures",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
+                      ),
+                      title: "COMMISSION PAID",
+                      bigValue: _moneyText(_totalCommission),
+                      footer: const Text(
+                        "Paid to agent network",
+                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CommisionPayoutPage(),
                         ),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const TotalRevenuePage(),
-                          ),
+                      ),
+                    );
+                  case 2:
+                    return _metricCard(
+                      color: const Color(0xFFB13BFF),
+                      leading: const Icon(
+                        Icons.people_outlined,
+                        size: 40,
+                        color: Colors.white,
+                      ),
+                      title: "TOTAL AGENTS",
+                      bigValue: _countText(_totalAgents),
+                      footer: const Text(
+                        "All registered agents",
+                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ManageAgentPage(),
                         ),
-                      );
-                    case 1:
-                      return _metricCard(
-                        color: const Color(0xFFD92C54),
-                        leading: SizedBox(
-                          height: 40,
-                          child: Image.asset(
-                            'lib/icons/coins.png',
-                            color: Colors.white,
-                          ),
-                        ),
-                        title: "COMMISSION PAID",
-                        bigValue: _moneyText(_totalCommission),
-                        footer: const Text(
-                          "Paid to agent network",
-                          style: TextStyle(color: Colors.white, fontSize: 12),
-                        ),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const CommisionPayoutPage(),
-                          ),
-                        ),
-                      );
-                    case 2:
-                      return _metricCard(
-                        color: const Color(0xFFB13BFF),
-                        leading: const Icon(
-                          Icons.people_outlined,
-                          size: 40,
+                      ),
+                    );
+                  case 3:
+                    return _metricCard(
+                      color: const Color(0xFFD92C54),
+                      leading: SizedBox(
+                        height: 40,
+                        child: Image.asset(
+                          'lib/icons/bag.png',
                           color: Colors.white,
                         ),
-                        title: "TOTAL AGENTS",
-                        bigValue: _countText(_totalAgents),
-                        footer: const Text(
-                          "All registered agents",
-                          style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                      title: "TOTAL VENTURES",
+                      bigValue: _countText(_totalVentures),
+                      footer: const Text(
+                        "Ready for investment",
+                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const TotalVenturesPage(),
                         ),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ManageAgentPage(),
-                          ),
+                      ),
+                    );
+                  case 4:
+                    return _metricCard(
+                      color: const Color(0xFFFFD66B),
+                      leading: SizedBox(
+                        height: 40,
+                        child: Image.asset(
+                          'lib/icons/bank.png',
+                          color: Colors.white,
                         ),
-                      );
-                    case 3:
-                      return _metricCard(
-                        color: const Color(0xFFD92C54),
-                        leading: SizedBox(
-                          height: 40,
-                          child: Image.asset(
-                            'lib/icons/bag.png',
-                            color: Colors.white,
-                          ),
+                      ),
+                      title: "TOTAL BRANCHES",
+                      bigValue: _countText(_totalBranches),
+                      footer: const Text(
+                        "Across the organization",
+                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ManageBranchesPage(),
                         ),
-                        title: "TOTAL VENTURES",
-                        bigValue: _countText(_totalVentures),
-                        footer: const Text(
-                          "Ready for investment",
-                          style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                    );
+                  case 5:
+                    return _metricCard(
+                      color: const Color(0xFF67AE6E),
+                      leading: SizedBox(
+                        height: 40,
+                        child: Image.asset(
+                          'lib/icons/decision-tree.png',
+                          color: Colors.white,
                         ),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const TotalVenturesPage(),
-                          ),
+                      ),
+                      title: "REFERRAL TREE",
+                      bigValue: _twoLineBigValue("VIEW", "NETWORK"),
+                      footer: const Text(
+                        "Complete agent hierarchy",
+                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ReferralPage()),
+                      ),
+                    );
+                  case 6:
+                    return _metricCard(
+                      color: const Color(0xFF3D74B6),
+                      leading: SizedBox(
+                        height: 40,
+                        child: Image.asset(
+                          'lib/icons/pig.png',
+                          color: Colors.white,
                         ),
-                      );
-                    case 4:
-                      return _metricCard(
-                        color: const Color(0xFFFFD66B),
-                        leading: SizedBox(
-                          height: 40,
-                          child: Image.asset(
-                            'lib/icons/bank.png',
-                            color: Colors.white,
-                          ),
-                        ),
-                        title: "TOTAL BRANCHES",
-                        bigValue: _countText(_totalBranches),
-                        footer: const Text(
-                          "Across the organization",
-                          style: TextStyle(color: Colors.white, fontSize: 12),
-                        ),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ManageBranchesPage(),
-                          ),
-                        ),
-                      );
-                    case 5:
-                      return _metricCard(
-                        color: const Color(0xFF67AE6E),
-                        leading: SizedBox(
-                          height: 40,
-                          child: Image.asset(
-                            'lib/icons/decision-tree.png',
-                            color: Colors.white,
-                          ),
-                        ),
-                        title: "REFERRAL TREE",
-                        bigValue: _twoLineBigValue("VIEW", "NETWORK"),
-                        footer: const Text(
-                          "Complete agent hierarchy",
-                          style: TextStyle(color: Colors.white, fontSize: 12),
-                        ),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ReferralPage(),
-                          ),
-                        ),
-                      );
-                    case 6:
-                      return _metricCard(
-                        color: const Color(0xFF3D74B6),
-                        leading: SizedBox(
-                          height: 40,
-                          child: Image.asset(
-                            'lib/icons/pig.png',
-                            color: Colors.white,
-                          ),
-                        ),
-                        title: "WITHDRAWAL REQUESTS",
-                        bigValue: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                '$_totalPendingWithdrawals',
-                                maxLines: 1,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            const Text(
-                              "Pending",
-                              style: TextStyle(
+                      ),
+                      title: "WITHDRAWAL REQUESTS",
+                      bigValue: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              '$_totalPendingWithdrawals',
+                              maxLines: 1,
+                              style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 20,
+                                fontSize: 26,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ],
-                        ),
-                        footer: const Text(
-                          "Approve agent payouts",
-                          style: TextStyle(color: Colors.white, fontSize: 12),
-                        ),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const Withdrawalrequestpage(),
                           ),
-                        ),
-                      );
-                    default:
-                      return _metricCard(
-                        color: const Color(0xFF5C7285),
-                        leading: SizedBox(
-                          height: 40,
-                          child: Image.asset(
-                            'lib/icons/charts.png',
-                            color: Colors.white,
+                          const SizedBox(height: 2),
+                          const Text(
+                            "Pending",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
+                        ],
+                      ),
+                      footer: const Text(
+                        "Approve agent payouts",
+                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const Withdrawalrequestpage(),
                         ),
-                        title: "REPORTS",
-                        bigValue: _twoLineBigValue("VIEW &", "EXPORT"),
-                        footer: const Text(
-                          "Download detailed reports",
-                          style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                    );
+                  default:
+                    return _metricCard(
+                      color: const Color(0xFF5C7285),
+                      leading: SizedBox(
+                        height: 40,
+                        child: Image.asset(
+                          'lib/icons/charts.png',
+                          color: Colors.white,
                         ),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => Reportspage()),
-                        ),
-                      );
+                      ),
+                      title: "REPORTS",
+                      bigValue: _twoLineBigValue("VIEW &", "EXPORT"),
+                      footer: const Text(
+                        "Download detailed reports",
+                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => Reportspage()),
+                      ),
+                    );
+                }
+              },
+            ),
+
+          const SizedBox(height: 24),
+
+          // QUICK ACTIONS
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _quickAction(
+                iconPath: 'lib/icons/add-friend.png',
+                label: 'Create Agent',
+                iconHeight: 25,
+                onTap: () async {
+                  final sp = await SharedPreferences.getInstance();
+                  final token =
+                      sp.getString('auth_token') ?? sp.getString('token') ?? '';
+                  if (token.isEmpty) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('You are not logged in')),
+                    );
+                    return;
                   }
+                  _authApi.setAuthToken(token);
+                  if (!mounted) return;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CreateAgentPage(api: _authApi),
+                    ),
+                  );
                 },
               ),
-
-            const SizedBox(height: 24),
-
-            // QUICK ACTIONS
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                _quickAction(
-                  iconPath: 'lib/icons/add-friend.png',
-                  label: 'Create Agent',
-                  iconHeight: 25,
-                  onTap: () async {
-                    final sp = await SharedPreferences.getInstance();
-                    final token =
-                        sp.getString('auth_token') ??
-                        sp.getString('token') ??
-                        '';
-                    if (token.isEmpty) {
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('You are not logged in')),
-                      );
-                      return;
-                    }
-                    _authApi.setAuthToken(token);
+              _quickAction(
+                iconPath: 'lib/icons/add.png',
+                label: 'Create Venture',
+                iconHeight: 20,
+                onTap: () async {
+                  final sp = await SharedPreferences.getInstance();
+                  final token =
+                      sp.getString('auth_token') ?? sp.getString('token') ?? '';
+                  if (token.isEmpty) {
                     if (!mounted) return;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => CreateAgentPage(api: _authApi),
-                      ),
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('You are not logged in')),
                     );
-                  },
-                ),
-                _quickAction(
-                  iconPath: 'lib/icons/add.png',
-                  label: 'Create Venture',
-                  iconHeight: 20,
-                  onTap: () async {
-                    final sp = await SharedPreferences.getInstance();
-                    final token =
-                        sp.getString('auth_token') ??
-                        sp.getString('token') ??
-                        '';
-                    if (token.isEmpty) {
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('You are not logged in')),
-                      );
-                      return;
-                    }
-                    _authApi.setAuthToken(token);
+                    return;
+                  }
+                  _authApi.setAuthToken(token);
+                  if (!mounted) return;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CreateVenturePage(api: _authApi),
+                    ),
+                  );
+                },
+              ),
+              _quickAction(
+                iconPath: 'lib/icons/git.png',
+                label: 'Create Branch',
+                iconHeight: 30,
+                onTap: () async {
+                  final sp = await SharedPreferences.getInstance();
+                  final token =
+                      sp.getString('auth_token') ?? sp.getString('token') ?? '';
+                  if (token.isEmpty) {
                     if (!mounted) return;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => CreateVenturePage(api: _authApi),
-                      ),
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('You are not logged in')),
                     );
-                  },
-                ),
-                _quickAction(
-                  iconPath: 'lib/icons/git.png',
-                  label: 'Create Branch',
-                  iconHeight: 30,
-                  onTap: () async {
-                    final sp = await SharedPreferences.getInstance();
-                    final token =
-                        sp.getString('auth_token') ??
-                        sp.getString('token') ??
-                        '';
-                    if (token.isEmpty) {
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('You are not logged in')),
-                      );
-                      return;
-                    }
-                    _authApi.setAuthToken(token);
-                    if (!mounted) return;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => CreateBranchPage(api: _authApi),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
+                    return;
+                  }
+                  _authApi.setAuthToken(token);
+                  if (!mounted) return;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CreateBranchPage(api: _authApi),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -727,7 +677,6 @@ class _DashboardBodyState extends State<DashboardBody> {
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Column(
-            // Fill the cell and distribute content safely
             mainAxisSize: MainAxisSize.max,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -738,7 +687,6 @@ class _DashboardBodyState extends State<DashboardBody> {
                 style: const TextStyle(color: Colors.white, fontSize: 14),
               ),
               const SizedBox(height: 6),
-              // Value area takes remaining space, and shrinks inside where needed
               Expanded(
                 child: Align(alignment: Alignment.topLeft, child: bigValue),
               ),
