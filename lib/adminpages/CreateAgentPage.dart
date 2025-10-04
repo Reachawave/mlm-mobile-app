@@ -23,7 +23,8 @@ class _CreateAgentPageState extends State<CreateAgentPage> {
   final _ifscCode = TextEditingController();
   final _accountHolderName = TextEditingController();
   final _panNo = TextEditingController();
-  final _otherName = TextEditingController(); // Optional display label
+  final _otherName = TextEditingController();
+  final _fatherName = TextEditingController();
 
   // count and computed amount
   static const double _unitPrice = 50000.0;
@@ -65,6 +66,7 @@ class _CreateAgentPageState extends State<CreateAgentPage> {
     _panNo.dispose();
     _otherName.dispose();
     _countCtrl.dispose();
+    _fatherName.dispose();
     super.dispose();
   }
 
@@ -176,6 +178,7 @@ class _CreateAgentPageState extends State<CreateAgentPage> {
         accountHolderName: _accountHolderName.text.trim(),
         panNo: _panNo.text.trim(),
         count: safeCount,
+        fatherName: _fatherName.text.trim(),
       );
 
       if (!mounted) return;
@@ -222,6 +225,14 @@ class _CreateAgentPageState extends State<CreateAgentPage> {
             _text(_name, validator: _req),
             const SizedBox(height: 10),
 
+            _label("Other Name (e.g., Sub Agent)"),
+            _text(_otherName),
+            const SizedBox(height: 16),
+
+            _label("Father/Spouse Name"),
+            _text(_fatherName),
+            const SizedBox(height: 16),
+
             _label("Email"),
             _text(_email, validator: _reqEmail),
             const SizedBox(height: 10),
@@ -232,6 +243,21 @@ class _CreateAgentPageState extends State<CreateAgentPage> {
 
             _label("Address"),
             _text(_address, validator: _req),
+            const SizedBox(height: 10),
+
+            _label("Upline (Referral)"),
+            DropdownButtonFormField<int>(
+              value: _selectedUplineId,
+              items: [
+                const DropdownMenuItem<int>(value: 0, child: Text("No Upline")),
+                ..._agents.map((a) => DropdownMenuItem<int>(
+                  value: a.id,
+                  child: Text("${a.name} • ${a.referalCode}"),
+                )),
+              ],
+              onChanged: (v) => setState(() => _selectedUplineId = v ?? 0),
+              decoration: _ddDecoration(),
+            ),
             const SizedBox(height: 10),
 
             _h("KYC"),
@@ -288,25 +314,6 @@ class _CreateAgentPageState extends State<CreateAgentPage> {
               decoration: _ddDecoration(),
             ),
             const SizedBox(height: 10),
-
-            _label("Upline (Referral)"),
-            DropdownButtonFormField<int>(
-              value: _selectedUplineId,
-              items: [
-                const DropdownMenuItem<int>(value: 0, child: Text("No Upline")),
-                ..._agents.map((a) => DropdownMenuItem<int>(
-                  value: a.id,
-                  child: Text("${a.name} • ${a.referalCode}"),
-                )),
-              ],
-              onChanged: (v) => setState(() => _selectedUplineId = v ?? 0),
-              decoration: _ddDecoration(),
-            ),
-            const SizedBox(height: 10),
-
-            _label("Other Name (e.g., Sub Agent)"),
-            _text(_otherName),
-            const SizedBox(height: 16),
 
             _h("Investment"),
             Row(

@@ -1,8 +1,28 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+import java.util.Properties
+        import java.io.FileInputStream
+
+// Load keystore props (must be at project root)
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (!keystorePropertiesFile.exists()) {
+    throw GradleException("key.properties not found at project root: ${keystorePropertiesFile.absolutePath}")
+}
+keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+
+fun prop(name: String): String =
+    (keystoreProperties[name] as String?)?.takeIf { it.isNotBlank() }
+        ?: throw GradleException("Missing '$name' in key.properties")
+
+val storePath = prop("storeFile")
+val storeFileObj = file(storePath)
+if (!storeFileObj.exists()) {
+    throw GradleException("Keystore file not found at '$storePath' (resolved: ${storeFileObj.absolutePath})")
 }
 
 android {
@@ -14,31 +34,37 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
-    }
+    kotlinOptions { jvmTarget = JavaVersion.VERSION_11.toString() }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.reachawave.new_project"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
-    buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+    signingConfigs {
+        create("release") {
+            keyAlias = prop("keyAlias")
+            keyPassword = prop("keyPassword")
+            storeFile = storeFileObj
+            storePassword = prop("storePassword")
         }
+    }
+
+    buildTypes {
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release") // must be release
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+        getByName("debug") { isDebuggable = true }
     }
 }
 
-flutter {
-    source = "../.."
-}
+flutter { source = "../.." }

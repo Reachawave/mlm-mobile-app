@@ -2,16 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_project/utils/AuthApi.dart';
-import 'package:new_project/widgets/app_drawer.dart';
+import 'package:new_project/widgets/app_shell.dart';
 
-class ReferralPage extends StatefulWidget {
+class ReferralPage extends StatelessWidget {
   const ReferralPage({super.key});
 
   @override
-  State<ReferralPage> createState() => _ReferralPageState();
+  Widget build(BuildContext context) {
+    return const AppShell(title: 'Referral Tree', body: _ReferralBody());
+  }
 }
 
-class _ReferralPageState extends State<ReferralPage> {
+class _ReferralBody extends StatefulWidget {
+  const _ReferralBody({super.key});
+
+  @override
+  State<_ReferralBody> createState() => _ReferralBodyState();
+}
+
+class _ReferralBodyState extends State<_ReferralBody> {
   AuthApi? _api;
 
   bool _loadingAgents = true;
@@ -163,87 +172,57 @@ class _ReferralPageState extends State<ReferralPage> {
                 a.email.toLowerCase().contains(q);
           }).toList();
 
-    return Scaffold(
-      drawer: const AppDrawer(),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.black12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Builder(
-              builder: (context) => IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
-            ),
-          ),
+    if (_loadingAgents) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(_error!, textAlign: TextAlign.center),
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: _loadingAgents ? null : _loadAgents,
-            icon: const Icon(Icons.refresh, color: Colors.black87),
-          ),
-          const SizedBox(width: 4),
-        ],
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, color: Colors.black12),
-        ),
-      ),
-      body: _loadingAgents
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(_error!, textAlign: TextAlign.center),
-              ),
-            )
-          : LayoutBuilder(
-              builder: (context, c) {
-                final wide = c.maxWidth >= 900;
+      );
+    }
 
-                if (wide) {
-                  // Side-by-side on wide screens
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(width: 360, child: _agentsPanel(filteredAgents)),
-                      const VerticalDivider(
-                        width: 1,
-                        thickness: 1,
-                        color: Color(0xFFECECEC),
-                      ),
-                      // Levels on the right
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(16),
-                          child: _levelsPanel(),
-                        ),
-                      ),
-                    ],
-                  );
-                } else {
-                  // Stacked on narrow screens (mobile)
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _agentsPanel(filteredAgents),
-                        const SizedBox(height: 12),
-                        _levelsPanel(),
-                      ],
-                    ),
-                  );
-                }
-              },
+    return LayoutBuilder(
+      builder: (context, c) {
+        final wide = c.maxWidth >= 900;
+
+        if (wide) {
+          // Side-by-side on wide screens
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(width: 360, child: _agentsPanel(filteredAgents)),
+              const VerticalDivider(
+                width: 1,
+                thickness: 1,
+                color: Color(0xFFECECEC),
+              ),
+              // Levels on the right
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: _levelsPanel(),
+                ),
+              ),
+            ],
+          );
+        } else {
+          // Stacked on narrow screens (mobile)
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _agentsPanel(filteredAgents),
+                const SizedBox(height: 12),
+                _levelsPanel(),
+              ],
             ),
+          );
+        }
+      },
     );
   }
 

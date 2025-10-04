@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:new_project/utils/diff_utils.dart';
+import 'package:new_project/widgets/app_shell.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_project/widgets/app_drawer.dart';
@@ -9,9 +10,14 @@ import 'package:new_project/adminpages/CreateVenturePage.dart';
 class TotalVenturesPage extends StatelessWidget {
   const TotalVenturesPage({super.key});
 
+  // @override
+  // Widget build(BuildContext context) =>
+  //     const Scaffold(body: TotalVenturesBody());
+
   @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: TotalVenturesBody());
+  Widget build(BuildContext context) {
+    return const AppShell(title: 'Ventures', body: TotalVenturesBody());
+  }
 }
 
 class TotalVenturesBody extends StatefulWidget {
@@ -329,36 +335,6 @@ class _TotalVenturesBodyState extends State<TotalVenturesBody> {
     return Scaffold(
       drawerEnableOpenDragGesture: false,
       drawer: const AppDrawer(),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.black12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Builder(
-              builder: (context) => IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
-            ),
-          ),
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: _loading ? null : _loadVentures,
-            icon: const Icon(Icons.refresh, color: Colors.black87),
-          ),
-          const SizedBox(width: 4),
-        ],
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, color: Colors.black12),
-        ),
-      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -487,7 +463,7 @@ class _TotalVenturesBodyState extends State<TotalVenturesBody> {
 
                     // Card/Table
                     Container(
-                      width: double.infinity, // responsive (no fixed 1000)
+                      width: double.infinity, // responsive
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.black12, width: 1),
                         color: Colors.white,
@@ -632,28 +608,34 @@ class _TotalVenturesBodyState extends State<TotalVenturesBody> {
                                         ),
                                       ),
 
-                                      // availability bar
+                                      // availability bar with breathing room
                                       Expanded(
                                         flex: 3,
-                                        child: _AvailabilityBar(
-                                          sold: v.treesSold,
-                                          total: v.totalTrees,
-                                          percent: percent,
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(
+                                            right: 12.0,
+                                          ),
+                                          child: _AvailabilityBar(
+                                            sold: v.treesSold,
+                                            total: v.totalTrees,
+                                            percent: percent,
+                                          ),
                                         ),
                                       ),
 
-                                      // actions
-                                      Expanded(
-                                        flex: 2,
-                                        child: Wrap(
-                                          spacing: 6,
-                                          children: [
-                                            _actionButton(
-                                              icon: Icons.edit,
-                                              label: '',
-                                              onTap: () => _openEditVenture(v),
-                                            ),
-                                          ],
+                                      // small spacer
+                                      const SizedBox(width: 8),
+
+                                      // fixed-width actions (prevents touching)
+                                      SizedBox(
+                                        width: 44,
+                                        child: IconButton(
+                                          tooltip: 'Edit',
+                                          icon: const Icon(
+                                            Icons.edit,
+                                            size: 20,
+                                          ),
+                                          onPressed: () => _openEditVenture(v),
                                         ),
                                       ),
                                     ],
@@ -672,7 +654,7 @@ class _TotalVenturesBodyState extends State<TotalVenturesBody> {
     );
   }
 
-  // small helper for badge color
+  // badge color
   static Color _statusColor(String s) {
     switch (s.toLowerCase()) {
       case 'active':
@@ -684,23 +666,6 @@ class _TotalVenturesBodyState extends State<TotalVenturesBody> {
       default:
         return Colors.blueGrey;
     }
-  }
-
-  // simple button used in actions column
-  Widget _actionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return OutlinedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, size: 16),
-      label: Text(label, style: const TextStyle(fontSize: 12)),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        side: BorderSide(color: Colors.grey.shade400, width: 0.8),
-      ),
-    );
   }
 }
 

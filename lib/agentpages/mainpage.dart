@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:new_project/agentpages/withdrawpage.dart';
+import 'package:new_project/auth/Login.dart';
 
 import '../adminpages/CommisionPayoutPage.dart';
 import '../adminpages/DashboardPage.dart';
@@ -58,7 +59,6 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
         CommissionReport(),
         notifypage(),
         ProfilePage(agentId: (agentId?.toString() ?? ''), token: token ?? ''),
-
       ];
     });
   }
@@ -73,9 +73,7 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
   Widget build(BuildContext context) {
     // Show loading indicator if _pages not initialized yet (i.e., agentId/token not loaded)
     if (agentId == null || token == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -125,7 +123,8 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Agentdashboardmainpage(initialIndex: 0),
+                          builder: (context) =>
+                              Agentdashboardmainpage(initialIndex: 0),
                         ),
                       );
                     },
@@ -138,7 +137,8 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Agentdashboardmainpage(initialIndex: 1),
+                          builder: (context) =>
+                              Agentdashboardmainpage(initialIndex: 1),
                         ),
                       );
                     },
@@ -151,7 +151,8 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Agentdashboardmainpage(initialIndex: 2),
+                          builder: (context) =>
+                              Agentdashboardmainpage(initialIndex: 2),
                         ),
                       );
                     },
@@ -164,7 +165,8 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Agentdashboardmainpage(initialIndex: 4),
+                          builder: (context) =>
+                              Agentdashboardmainpage(initialIndex: 4),
                         ),
                       );
                     },
@@ -177,7 +179,8 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Agentdashboardmainpage(initialIndex: 5),
+                          builder: (context) =>
+                              Agentdashboardmainpage(initialIndex: 5),
                         ),
                       );
                     },
@@ -190,33 +193,69 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Agentdashboardmainpage(initialIndex: 3),
+                          builder: (context) =>
+                              Agentdashboardmainpage(initialIndex: 3),
                         ),
                       );
                     },
                     imagePath: "lib/icons/charts.png",
                     title: "Commission Report",
                   ),
+                  // DrawerMenuRow(
+                  //   onTap: () {
+                  //     Navigator.pop(context);
+                  //   },
+                  //   imagePath: "lib/icons/text.png",
+                  //   title: "My Layouts",
+                  // ),
+                  // DrawerMenuRow(
+                  //   onTap: () {
+                  //     Navigator.pop(context);
+                  //   },
+                  //   imagePath: "lib/icons/telephone.png",
+                  //   title: "Contact Us",
+                  // ),
+                  // DrawerMenuRow(
+                  //   onTap: () {
+                  //     Navigator.pop(context);
+                  //   },
+                  //   imagePath: "lib/icons/info-sign.png",
+                  //   title: "About Us",
+                  // ),
                   DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
+                    onTap: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text("Confirm Logout"),
+                          content: const Text(
+                            "Are you sure you want to log out?",
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(false),
+                              child: const Text("Cancel"),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.of(ctx).pop(true),
+                              child: const Text("Logout"),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirm == true) {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.clear(); // clear session/token
+                        Navigator.pop(context); // close drawer
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (_) => const Loginpage()),
+                          (route) => false,
+                        );
+                      }
                     },
-                    imagePath: "lib/icons/text.png",
-                    title: "My Layouts",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                    imagePath: "lib/icons/telephone.png",
-                    title: "Contact Us",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                    imagePath: "lib/icons/info-sign.png",
-                    title: "About Us",
+                    icon: Icons.logout,
+                    title: "Logout",
                   ),
                 ],
               ),
@@ -246,11 +285,47 @@ class _AgentdashboardmainpageState extends State<Agentdashboardmainpage> {
           ),
         ),
         actions: [
+          const SizedBox(width: 10),
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: SizedBox(
-              height: 30,
-              child: Image.asset('lib/icons/user.png'),
+            child: InkWell(
+              onTap: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text("Confirm Logout"),
+                    content: const Text("Are you sure you want to log out?"),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: const Text("Cancel"),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                        ),
+                        child: const Text("Logout"),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirm == true) {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.clear(); // clear saved session/token
+
+                  if (!context.mounted) return;
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const Loginpage()),
+                    (route) => false,
+                  );
+                }
+              },
+              child: SizedBox(
+                height: 30,
+                child: Image.asset('lib/icons/user.png'),
+              ),
             ),
           ),
         ],

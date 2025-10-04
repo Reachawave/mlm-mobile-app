@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:new_project/utils/diff_utils.dart';
+import 'package:new_project/widgets/app_shell.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_project/widgets/app_drawer.dart';
@@ -9,9 +10,14 @@ import 'package:new_project/adminpages/CreateBranchPage.dart';
 class ManageBranchesPage extends StatelessWidget {
   const ManageBranchesPage({super.key});
 
+  // @override
+  // Widget build(BuildContext context) =>
+  //     const Scaffold(body: ManageBranchesPageBody());
+
   @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: ManageBranchesPageBody());
+  Widget build(BuildContext context) {
+    return const AppShell(title: 'Branches', body: ManageBranchesPageBody());
+  }
 }
 
 class ManageBranchesPageBody extends StatefulWidget {
@@ -305,36 +311,6 @@ class _ManageBranchesPageBodyState extends State<ManageBranchesPageBody> {
     return Scaffold(
       drawerEnableOpenDragGesture: false,
       drawer: const AppDrawer(),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.black12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Builder(
-              builder: (context) => IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
-            ),
-          ),
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: _loading ? null : _loadBranches,
-            icon: const Icon(Icons.refresh, color: Colors.black87),
-          ),
-          const SizedBox(width: 4),
-        ],
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, color: Colors.black12),
-        ),
-      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null

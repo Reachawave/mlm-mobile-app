@@ -44,7 +44,7 @@ class _LoginBodyState extends State<LoginBody> {
 
   String? validatePassword(String? value) {
     if (value == null || value.isEmpty) return "Please enter a password.";
-    if (value.length < 6) return "Password must be atleast 8 characters long.";
+    if (value.length < 6) return "Password must be at least 6 characters long.";
     return null;
   }
 
@@ -63,7 +63,10 @@ class _LoginBodyState extends State<LoginBody> {
       final uri = Uri.parse("${Constants.ipBaseUrl}public/login");
       final response = await http.post(
         uri,
-        headers: const {"Accept": "application/json", "Content-Type": "application/json"},
+        headers: const {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
         body: jsonEncode({"email": email, "password": password}),
       );
 
@@ -84,14 +87,22 @@ class _LoginBodyState extends State<LoginBody> {
 
           if (!mounted) return;
           if (role == "ADMIN" || role == "DIRECTOR") {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const Dashboardpage()));
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const Dashboardpage()),
+            );
           } else if (role == "AGENT") {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const Agentdashboardmainpage()));
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const Agentdashboardmainpage()),
+            );
           } else {
             setState(() => _message = "Unknown role!");
           }
         } else {
-          setState(() => _message = (data["message"] ?? "Login failed!").toString());
+          setState(
+            () => _message = (data["message"] ?? "Login failed!").toString(),
+          );
         }
       } else {
         setState(() => _message = "Error: ${response.statusCode}");
@@ -119,14 +130,23 @@ class _LoginBodyState extends State<LoginBody> {
           child: Column(
             children: [
               const SizedBox(height: 60.0),
-              const Text("Welcome to", style: TextStyle(color: Colors.green, fontSize: 20)),
+              const Text(
+                "Welcome to",
+                style: TextStyle(color: Colors.green, fontSize: 20),
+              ),
               const Text(
                 "Sri Vayutej\nDevelopers",
                 textAlign: TextAlign.center,
-                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 40),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                  fontSize: 40,
+                ),
               ),
-              const Text("your partner in buiding a greener future",
-                  style: TextStyle(color: Colors.green, fontSize: 20)),
+              const Text(
+                "your partner in buiding a greener future",
+                style: TextStyle(color: Colors.green, fontSize: 20),
+              ),
               const SizedBox(height: 20.0),
               Padding(
                 padding: const EdgeInsets.all(20.0),
@@ -147,62 +167,114 @@ class _LoginBodyState extends State<LoginBody> {
                           const SizedBox(height: 10.0),
                           SizedBox(
                             height: 60,
-                            child: Image.asset('lib/icons/bank.png', color: Colors.grey),
+                            child: Image.asset(
+                              'lib/icons/bank.png',
+                              color: Colors.grey,
+                            ),
                           ),
                           const SizedBox(height: 15.0),
-                          const Text("Login",
-                              style: TextStyle(color: Colors.black, fontSize: 25, fontWeight: FontWeight.bold)),
-                          const Text("Enter your email below to login ",
-                              style: TextStyle(color: Colors.green, fontSize: 20)),
-                          const Text("your account", style: TextStyle(color: Colors.green, fontSize: 20)),
+                          const Text(
+                            "Login",
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 25,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Text(
+                            "Enter your email below to login ",
+                            style: TextStyle(color: Colors.green, fontSize: 20),
+                          ),
+                          const Text(
+                            "your account",
+                            style: TextStyle(color: Colors.green, fontSize: 20),
+                          ),
                           const SizedBox(height: 10),
                           const Align(
                             alignment: Alignment.centerLeft,
-                            child: Text("Email", style: TextStyle(fontSize: 16.0)),
+                            child: Text(
+                              "Email",
+                              style: TextStyle(fontSize: 16.0),
+                            ),
                           ),
                           const SizedBox(height: 6.0),
                           TextFormField(
-                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                             validator: validateEmail,
                             controller: emailController,
                             decoration: const InputDecoration(
-                              border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(5),
+                                ),
+                              ),
                               hintText: "m@example.com",
-                              hintStyle: TextStyle(color: Colors.green, fontSize: 16),
-                              contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                              hintStyle: TextStyle(
+                                color: Colors.green,
+                                fontSize: 16,
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 10,
+                                horizontal: 20,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 16.0),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text("Password", style: TextStyle(fontSize: 16.0)),
+                              const Text(
+                                "Password",
+                                style: TextStyle(fontSize: 16.0),
+                              ),
                               InkWell(
                                 onTap: () {
                                   Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (_) => const Forgotpasswod()),
+                                    MaterialPageRoute(
+                                      builder: (_) => const Forgotpasswod(),
+                                    ),
                                   );
                                 },
-                                child: const Text("Forgot Password?",
-                                    style: TextStyle(fontSize: 16.0, color: Colors.green)),
+                                child: const Text(
+                                  "Forgot Password?",
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                    color: Colors.green,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 6.0),
                           TextFormField(
-                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                             validator: validatePassword,
                             controller: passwordController,
                             obscureText: _obscurePassword,
                             decoration: InputDecoration(
                               suffixIcon: IconButton(
-                                icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility,
-                                    color: Colors.green),
-                                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: Colors.green,
+                                ),
+                                onPressed: () => setState(
+                                  () => _obscurePassword = !_obscurePassword,
+                                ),
                               ),
-                              border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))),
-                              contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                              border: const OutlineInputBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(5),
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 10,
+                                horizontal: 20,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 20.0),
@@ -212,17 +284,31 @@ class _LoginBodyState extends State<LoginBody> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,
                                 foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                               ),
                               onPressed: _loading ? null : _login,
                               child: _loading
-                                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
                                   : const Text("Login"),
                             ),
                           ),
                           const SizedBox(height: 10.0),
-                          if (_message.isNotEmpty) Text(_message, style: const TextStyle(color: Colors.red)),
+                          if (_message.isNotEmpty)
+                            Text(
+                              _message,
+                              style: const TextStyle(color: Colors.red),
+                            ),
                         ],
                       ),
                     ),
@@ -241,16 +327,17 @@ class _Prefs {
   static Future<void> saveLoginData(Map<String, dynamic> loginData) async {
     final prefs = await SharedPreferences.getInstance();
 
-    final role = loginData["role"] as String?;
+    final role = (loginData["role"])?.toString();
     final id = _asInt(loginData["id"]);
-    final agentId = loginData["agentId"] as int;
-    final email = loginData["email"] as String?;
-    final username = loginData["username"] as String?;
-    final token = loginData["token"] as String?;
+    final int? agentId = _asInt(loginData["agentId"]);
+    final email = (loginData["email"])?.toString();
+    final username = (loginData["username"])?.toString();
+    final token = (loginData["token"])?.toString();
 
     if (role != null) await prefs.setString("role", role);
     if (id != null) await prefs.setInt("id", id);
-    if (agentId != null) await prefs.setInt("agentId", agentId);
+    if (agentId != null)
+      await prefs.setInt("agentId", agentId); // only if present
     if (email != null) await prefs.setString("email", email);
     if (username != null) await prefs.setString("username", username);
     if (token != null) await prefs.setString("token", token);
@@ -264,13 +351,12 @@ class _Prefs {
     if (v is num) return v.toInt();
     if (v is String) return int.tryParse(v);
     return null;
+    // Note: returns null instead of throwing, which avoids "Null is not a subtype of int"
   }
 
-  /// Returns agentId if saved; otherwise falls back to optId (if present).
+  /// Returns agentId if saved; otherwise null.
   static Future<int?> getAgentId() async {
     final prefs = await SharedPreferences.getInstance();
-    final a = prefs.getInt("agentId");
-    if (a != null) return a;
     return prefs.getInt("agentId");
   }
 }

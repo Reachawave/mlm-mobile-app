@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:new_project/adminpages/ReferrelPage.dart';
 import 'package:new_project/adminpages/ReportsPage.dart';
+import 'package:new_project/auth/Login.dart';
 import 'package:new_project/widgets/drawer_menu_row.dart' show DrawerMenuRow;
 import 'package:new_project/adminpages/DashboardPage.dart' show Dashboardpage;
 import 'package:new_project/adminpages/ManageAgentsPage.dart'
@@ -14,6 +15,7 @@ import 'package:new_project/adminpages/WithdrawalRequestPage.dart'
     hide DrawerMenuRow;
 import 'package:new_project/adminpages/CommisionPayoutPage.dart'
     hide DrawerMenuRow;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -159,14 +161,48 @@ class AppDrawer extends StatelessWidget {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (_) => const Reportspage(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const Reportspage()),
                     );
                   },
                   imagePath: "lib/icons/charts.png",
                   title: "Reports",
                 ),
+                DrawerMenuRow(
+                  onTap: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text("Confirm Logout"),
+                        content: const Text(
+                          "Are you sure you want to log out?",
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            child: const Text("Cancel"),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            child: const Text("Logout"),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true) {
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.clear(); // clear session/token
+                      Navigator.pop(context); // close drawer
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const Loginpage()),
+                        (route) => false,
+                      );
+                    }
+                  },
+                  icon: Icons.logout,
+                  title: "Logout",
+                ),
+
                 const SizedBox(height: 150),
                 InkWell(
                   onTap: () => Navigator.pop(context),
@@ -196,5 +232,7 @@ class AppDrawer extends StatelessWidget {
         ],
       ),
     );
+
+
   }
 }
