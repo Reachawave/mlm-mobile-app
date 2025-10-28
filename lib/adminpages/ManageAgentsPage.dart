@@ -1,4 +1,9 @@
+// ManageAgentPage.dart
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle; // <— added
 import 'package:new_project/widgets/app_shell.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -7,12 +12,15 @@ import 'package:new_project/widgets/app_drawer.dart';
 import 'package:new_project/adminpages/CreateAgentPage.dart';
 import 'package:new_project/utils/diff_utils.dart';
 
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:share_plus/share_plus.dart';
+
 class ManageAgentPage extends StatelessWidget {
   const ManageAgentPage({super.key});
-
-  // @override
-  // Widget build(BuildContext context) =>
-  //     const Scaffold(body: ManageAgentPageBody());
 
   @override
   Widget build(BuildContext context) {
@@ -171,7 +179,7 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
 
                     // Basic
                     row('Name', a.name),
-                    row('Other Name', a.otherName),
+                    row('Nominee Name', a.otherName),
                     row('Father/Spouse Name', a.fatherName),
                     row('Email', a.email),
                     row('Phone', a.contactNumber),
@@ -281,12 +289,13 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
                 "accountNo": accountNo.text,
                 "accountHolderName": accountHolderName.text,
                 "otherName": otherName.text,
-                "fatherName":fatherName.text,
+                "fatherName": fatherName.text,
                 "panNo": panNo.text.toUpperCase(),
               };
 
               final diff = changedFields(original, edited);
               if (diff.isEmpty) {
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('No changes to save')),
                 );
@@ -380,7 +389,7 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
                                     width: colW(false),
                                     child: TextFormField(
                                       controller: otherName,
-                                      decoration: dec('Other Name'),
+                                      decoration: dec('Nominee Name'),
                                     ),
                                   ),
                                   SizedBox(
@@ -500,6 +509,365 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
     }
   }
 
+  // ----------------------- RECEIPT: PDF helpers -----------------------
+
+  Widget _receiptMenu(_Agent a) {
+    return PopupMenuButton<String>(
+      tooltip: 'Receipt',
+      icon: const Icon(Icons.receipt_long),
+      onSelected: (v) async {
+        if (v == 'view') {
+          await _viewReceiptPdf(a);
+        } else if (v == 'download') {
+          await _downloadReceiptPdf(a);
+        } else if (v == 'share') {
+          await _shareReceiptPdf(a);
+        }
+      },
+      itemBuilder: (ctx) => const [
+        PopupMenuItem(value: 'view', child: Text('View PDF')),
+        PopupMenuItem(value: 'download', child: Text('Download PDF')),
+        PopupMenuItem(value: 'share', child: Text('Share PDF')),
+      ],
+    );
+  }
+
+  String _sanitizeFileName(String input) {
+    final s = input.trim().replaceAll(RegExp(r'\s+'), '_');
+    return s.replaceAll(RegExp(r'[^A-Za-z0-9._-]+'), '');
+  }
+
+  String _amountInWords(double n) {
+    final v = n.round();
+    if (v == 0) return 'Zero Only';
+    if (v == 50000) return 'Rupees Fifty thousand Only';
+    return 'Rupees $v Only';
+  }
+
+  Future<Uint8List> _buildReceiptPdf(_Agent a) async {
+    final doc = pw.Document();
+
+    // Colors
+    final blue = PdfColor.fromInt(0xFF4a90e2);
+    final textGrey = PdfColor.fromInt(0xFF555555);
+    final lineGrey = PdfColor.fromInt(0xFFDDDDDD);
+
+    // ✅ Fonts that include ₹ (Rupee)
+    final base = await PdfGoogleFonts.notoSansRegular();
+    final bold = await PdfGoogleFonts.notoSansBold();
+    final italic = await PdfGoogleFonts.notoSansItalic();
+    final boldItalic = await PdfGoogleFonts.notoSansBoldItalic();
+
+    // ✅ Load logo from lib/assets/logo.png
+    final logoBytes = await rootBundle.load('lib/assets/logo.png');
+    final logoImage = pw.MemoryImage(logoBytes.buffer.asUint8List());
+
+    // Rupee symbol
+    const rupee = '\u20B9';
+
+    pw.Widget cellH(String t) => pw.Container(
+      color: PdfColor.fromInt(0xFFF2F2F2),
+      padding: pw.EdgeInsets.all(8),
+      child: pw.Text(
+        t,
+        style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+      ),
+    );
+
+    pw.Widget cellV(String t) => pw.Container(
+      padding: pw.EdgeInsets.all(8),
+      child: pw.Text(
+        t.isEmpty ? '-' : t,
+        style: pw.TextStyle(
+          fontSize: 12,
+          fontWeight: pw.FontWeight.bold,
+          color: textGrey,
+        ),
+      ),
+    );
+
+    pw.Widget sectionTitle(String t) => pw.Padding(
+      padding: pw.EdgeInsets.only(top: 16, bottom: 8),
+      child: pw.Container(
+        decoration: pw.BoxDecoration(
+          border: pw.Border(bottom: pw.BorderSide(color: blue, width: 1)),
+        ),
+        child: pw.Text(
+          t,
+          style: pw.TextStyle(
+            fontSize: 14,
+            fontWeight: pw.FontWeight.bold,
+            color: blue,
+          ),
+        ),
+      ),
+    );
+
+    pw.Widget signBlock(String label) => pw.Column(
+      children: [
+        pw.Container(
+          width: 200,
+          height: 0,
+          decoration: pw.BoxDecoration(
+            border: pw.Border(
+              top: pw.BorderSide(
+                color: PdfColors.black,
+                width: 1,
+                style: pw.BorderStyle.dashed,
+              ),
+            ),
+          ),
+        ),
+        pw.SizedBox(height: 5),
+        pw.Text(
+          label,
+          style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+        ),
+      ],
+    );
+
+    doc.addPage(
+      pw.MultiPage(
+        pageTheme: pw.PageTheme(
+          margin: pw.EdgeInsets.all(20),
+          theme: pw.ThemeData.withFont(
+            base: base,
+            bold: bold,
+            italic: italic,
+            boldItalic: boldItalic,
+          ),
+        ),
+        build: (ctx) => [
+          // Header
+          pw.Container(
+            padding: pw.EdgeInsets.only(bottom: 8),
+            decoration: pw.BoxDecoration(
+              border: pw.Border(bottom: pw.BorderSide(color: blue, width: 2)),
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              children: [
+                pw.Row(
+                  children: [
+                    // ✅ Logo image
+                    pw.ClipRRect(
+                      horizontalRadius: 6,
+                      verticalRadius: 6,
+                      child: pw.Image(logoImage, width: 36, height: 36),
+                    ),
+                    pw.SizedBox(width: 10),
+                    pw.Text(
+                      'Sri Vayutej Developers',
+                      style: pw.TextStyle(
+                        fontSize: 18,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColor.fromInt(0xFF333333),
+                      ),
+                    ),
+                  ],
+                ),
+                pw.Text(
+                  'Office Copy',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColor.fromInt(0xFF333333),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          pw.SizedBox(height: 14),
+          pw.Center(
+            child: pw.Text(
+              'ACKNOWLEDGEMENT RECEIPT',
+              style: pw.TextStyle(
+                fontSize: 16,
+                fontWeight: pw.FontWeight.bold,
+                color: blue,
+                decoration: pw.TextDecoration.underline,
+              ),
+            ),
+          ),
+          pw.SizedBox(height: 10),
+
+          // Meta
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.RichText(
+                text: pw.TextSpan(
+                  text: 'Receipt No: ',
+                  style: pw.TextStyle(
+                    fontSize: 12,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                  children: [
+                    pw.TextSpan(
+                      text: a.referalId.isNotEmpty ? a.referalId : '—',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.normal),
+                    ),
+                  ],
+                ),
+              ),
+              pw.RichText(
+                text: pw.TextSpan(
+                  text: 'Date: ',
+                  style: pw.TextStyle(
+                    fontSize: 12,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                  children: [
+                    pw.TextSpan(
+                      text: a.createdAt.isNotEmpty ? a.createdAt : '—',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.normal),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // Received From
+          sectionTitle('Received From'),
+          pw.Table(
+            border: pw.TableBorder.all(color: lineGrey, width: 1),
+            columnWidths: {
+              0: pw.FixedColumnWidth(160),
+              1: const pw.FlexColumnWidth(),
+            },
+            children: [
+              pw.TableRow(children: [cellH('Agent ID'), cellV(a.referalId)]),
+              pw.TableRow(children: [cellH('Name'), cellV(a.name)]),
+              pw.TableRow(
+                children: [cellH('S/o, W/o, D/o'), cellV(a.fatherName)],
+              ),
+              pw.TableRow(
+                children: [cellH('Mobile No.'), cellV(a.contactNumber)],
+              ),
+              pw.TableRow(children: [cellH('Email'), cellV(a.email)]),
+              pw.TableRow(children: [cellH('Aadhar No.'), cellV(a.aadharNo)]),
+              pw.TableRow(children: [cellH('PAN'), cellV(a.panNo)]),
+            ],
+          ),
+
+          // Payment Details
+          sectionTitle('Payment Details'),
+          pw.Table(
+            border: pw.TableBorder.all(color: lineGrey, width: 1),
+            columnWidths: {
+              0: pw.FixedColumnWidth(160),
+              1: const pw.FlexColumnWidth(),
+            },
+            children: [
+              pw.TableRow(
+                children: [
+                  cellH('Amount Received'),
+                  // ✅ Rupee symbol now renders with Noto Sans
+                  cellV('$rupee${a.totalAmount.toStringAsFixed(0)}/-'),
+                ],
+              ),
+              pw.TableRow(
+                children: [cellH('Venture Name'), cellV(a.ventureName)],
+              ),
+              pw.TableRow(
+                children: [cellH('Number of Trees'), cellV(a.count.toString())],
+              ),
+            ],
+          ),
+
+          pw.SizedBox(height: 8),
+          pw.Text(
+            'In words: ${_amountInWords(a.totalAmount)}.',
+            style: pw.TextStyle(fontStyle: pw.FontStyle.italic, fontSize: 12),
+          ),
+
+          pw.SizedBox(height: 10),
+          pw.Text(
+            'This is a computer-generated receipt and does not require a physical signature. '
+            'The validity of this receipt is subject to the realization of the payment. '
+            'All disputes are subject to jurisdiction of courts in the respective city only.',
+            style: pw.TextStyle(
+              fontSize: 10,
+              color: PdfColor.fromInt(0xFF666666),
+            ),
+          ),
+
+          pw.SizedBox(height: 24),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              signBlock('Customer Signature'),
+              signBlock('Authorized Signatory'),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    return doc.save();
+  }
+
+  Future<void> _viewReceiptPdf(_Agent a) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PdfPreview(
+          canChangeOrientation: false,
+          canChangePageFormat: false,
+          allowPrinting: true,
+          allowSharing: true,
+          build: (format) => _buildReceiptPdf(a),
+          pdfFileName: _sanitizeFileName(
+            'receipt-${a.referalId}-${a.name}.pdf',
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<File> _saveReceiptPdfToAppDir(_Agent a) async {
+    final bytes = await _buildReceiptPdf(a);
+    final dir = await getApplicationDocumentsDirectory();
+    final fileName = _sanitizeFileName('receipt-${a.referalId}-${a.name}.pdf');
+    final file = File('${dir.path}/$fileName');
+    await file.writeAsBytes(bytes, flush: true);
+    return file;
+  }
+
+  Future<void> _downloadReceiptPdf(_Agent a) async {
+    try {
+      final file = await _saveReceiptPdfToAppDir(a);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Saved: ${file.path.split('/').last}')),
+      );
+      await OpenFilex.open(file.path);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Save failed: $e')));
+    }
+  }
+
+  Future<void> _shareReceiptPdf(_Agent a) async {
+    try {
+      final file = await _saveReceiptPdfToAppDir(a);
+      await Share.shareXFiles([
+        XFile(file.path),
+      ], text: 'Receipt for ${a.name}');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Share failed: $e')));
+    }
+  }
+
+  // ----------------------- UI -----------------------
+
   @override
   Widget build(BuildContext context) {
     final filtered = _search.text.trim().isEmpty
@@ -513,7 +881,6 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
 
     return Scaffold(
       drawer: const AppDrawer(),
-
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -712,6 +1079,7 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
                                   icon: const Icon(Icons.edit),
                                   onPressed: () => _openEditDialog(a),
                                 ),
+                                _receiptMenu(a),
                               ],
                             ),
                           ),
@@ -738,7 +1106,7 @@ class _ManageAgentPageBodyState extends State<ManageAgentPageBody> {
   );
 }
 
-// ---------- model (unchanged) ----------
+// ---------- model ----------
 class _Agent {
   final int id;
   final String name;

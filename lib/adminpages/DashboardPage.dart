@@ -426,7 +426,7 @@ class _DashboardBodyState extends State<DashboardBody> {
                           color: Colors.white,
                         ),
                       ),
-                      title: "WITHDRAWAL REQUESTS",
+                      title: "PAY OUTS",
                       bigValue: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -454,10 +454,10 @@ class _DashboardBodyState extends State<DashboardBody> {
                           ),
                         ],
                       ),
-                      footer: const Text(
-                        "Approve agent payouts",
-                        style: TextStyle(color: Colors.white, fontSize: 12),
-                      ),
+                      // footer: const Text(
+                      //   "Approve agent payouts",
+                      //   style: TextStyle(color: Colors.white, fontSize: 12),
+                      // ),
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(

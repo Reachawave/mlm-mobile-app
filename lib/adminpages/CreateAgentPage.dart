@@ -225,7 +225,7 @@ class _CreateAgentPageState extends State<CreateAgentPage> {
             _text(_name, validator: _req),
             const SizedBox(height: 10),
 
-            _label("Other Name (e.g., Sub Agent)"),
+            _label("Nominee Name (e.g., Sub Agent)"),
             _text(_otherName),
             const SizedBox(height: 16),
 

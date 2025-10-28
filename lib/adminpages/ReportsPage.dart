@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:new_project/widgets/app_shell.dart';
@@ -5,14 +7,20 @@ import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_project/utils/AuthApi.dart';
-import 'package:new_project/widgets/app_drawer.dart'; // <-- use your AppDrawer
+import 'package:new_project/widgets/app_drawer.dart';
+
+// ===== Export libs =====
+import 'package:csv/csv.dart';
+import 'package:excel/excel.dart' as xls;
+import 'package:file_saver/file_saver.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:pdf/pdf.dart' show PdfPageFormat; // for PdfPageFormat.a4
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 /// Reports page (entry)
 class Reportspage extends StatelessWidget {
   const Reportspage({super.key});
-
-  // @override
-  // Widget build(BuildContext context) => const Scaffold(body: ReportspageBody());
 
   @override
   Widget build(BuildContext context) {
@@ -99,8 +107,8 @@ class _ReportspageBodyState extends State<ReportspageBody> {
       _agents = agentRaw.map<_AgentRow>((e) {
         final m = Map<String, dynamic>.from(e as Map);
         final createdStr =
-            (m['createdAt'] ?? m['created_at'] ?? m['createdDate'] ?? '')
-                .toString();
+        (m['createdAt'] ?? m['created_at'] ?? m['createdDate'] ?? '')
+            .toString();
         return _AgentRow(
           id: (m['referalId'] ?? '').toString(),
           name: (m['name'] ?? '').toString(),
@@ -115,12 +123,12 @@ class _ReportspageBodyState extends State<ReportspageBody> {
       _investments = _agents
           .map(
             (a) => _InvestmentRow(
-              id: a.id,
-              agent: a.name,
-              totalAmount: a.totalAmount,
-              createdAt: a.createdAt,
-            ),
-          )
+          id: a.id,
+          agent: a.name,
+          totalAmount: a.totalAmount,
+          createdAt: a.createdAt,
+        ),
+      )
           .toList();
 
       // -------- WITHDRAWALS (API) --------
@@ -129,8 +137,8 @@ class _ReportspageBodyState extends State<ReportspageBody> {
       _withdrawals = wRaw.map<_WithdrawalRow>((e) {
         final m = Map<String, dynamic>.from(e as Map);
         final dateStr =
-            (m['paidDate'] ?? m['paymentDate'] ?? m['raisedDate'] ?? '')
-                .toString();
+        (m['paidDate'] ?? m['paymentDate'] ?? m['raisedDate'] ?? '')
+            .toString();
         return _WithdrawalRow(
           id: (m['id'] ?? 0).toString(),
           agent: (m['name'] ?? '').toString(),
@@ -291,7 +299,7 @@ class _ReportspageBodyState extends State<ReportspageBody> {
       _rangeStart = start;
       _rangeEnd = today;
       _selectedDateText =
-          "${DateFormat('dd MMM').format(start)} → ${DateFormat('dd MMM').format(today)}";
+      "${DateFormat('dd MMM').format(start)} → ${DateFormat('dd MMM').format(today)}";
     });
   }
 
@@ -303,7 +311,7 @@ class _ReportspageBodyState extends State<ReportspageBody> {
       _rangeStart = start;
       _rangeEnd = end;
       _selectedDateText =
-          "${DateFormat('dd MMM').format(start)} → ${DateFormat('dd MMM').format(end)}";
+      "${DateFormat('dd MMM').format(start)} → ${DateFormat('dd MMM').format(end)}";
     });
   }
 
@@ -339,6 +347,175 @@ class _ReportspageBodyState extends State<ReportspageBody> {
   List<_BranchRow> get _branchesFiltered =>
       _branches.where((b) => _inRange(b.createdAt)).toList();
 
+  // ------------------------ EXPORT HELPERS ------------------------
+  /// Returns current tab title, columns and rows (as strings) based on filters
+  (String title, List<String> cols, List<List<String>> rows) _currentTable() {
+    switch (_selectedIndex) {
+      case 0:
+        return (
+        'Agents',
+        const ['ID', 'Name', 'Email', 'Branch', 'Created'],
+        _agentsFiltered
+            .map((a) => [
+          a.id,
+          a.name,
+          a.email,
+          a.branch,
+          a.createdAt != null
+              ? DateFormat('dd/MM/yyyy').format(a.createdAt!)
+              : '-',
+        ])
+            .toList(),
+        );
+      case 1:
+        return (
+        'Ventures',
+        const ['ID', 'Name', 'Trees Sold', 'Total Trees', 'Created'],
+        _venturesFiltered
+            .map((v) => [
+          v.id,
+          v.name,
+          v.treesSold.toString(),
+          v.totalTrees.toString(),
+          v.createdAt != null
+              ? DateFormat('dd/MM/yyyy').format(v.createdAt!)
+              : '-',
+        ])
+            .toList(),
+        );
+      case 2:
+        return (
+        'Investments (per Agent)',
+        const ['ID', 'Agent', 'Total Amount', 'Created'],
+        _investmentsFiltered
+            .map((inv) => [
+          inv.id,
+          inv.agent,
+          _fmtINR(inv.totalAmount),
+          inv.createdAt != null
+              ? DateFormat('dd/MM/yyyy').format(inv.createdAt!)
+              : '-',
+        ])
+            .toList(),
+        );
+      case 3:
+        return (
+        'Withdrawals',
+        const ['ID', 'Agent', 'Amount', 'Date'],
+        _withdrawalsFiltered
+            .map((w) => [
+          w.id,
+          "${w.agent}${w.referalId.isNotEmpty ? " • ${w.referalId}" : ""}",
+          _fmtINR(w.amount),
+          w.date != null
+              ? DateFormat('dd/MM/yyyy').format(w.date!)
+              : '-',
+        ])
+            .toList(),
+        );
+      case 4:
+        return (
+        'Branches',
+        const ['ID', 'Name', 'Location', 'Agents', 'Total Sales', 'Created'],
+        _branchesFiltered
+            .map((b) => [
+          b.id,
+          b.name,
+          b.location,
+          b.agents.toString(),
+          b.totalSales.toString(),
+          b.createdAt != null
+              ? DateFormat('dd/MM/yyyy').format(b.createdAt!)
+              : '-',
+        ])
+            .toList(),
+        );
+      default:
+        return ('Report', const [], const []);
+    }
+  }
+
+  Future<void> _exportCsv() async {
+    final (title, cols, rows) = _currentTable();
+    final data = [cols, ...rows];
+    final csv = const ListToCsvConverter().convert(data);
+    final bytes = Uint8List.fromList(csv.codeUnits);
+    await _saveBytes(bytes, '${_fileTitle(title)}.csv', MimeType.csv);
+  }
+
+  Future<void> _exportXlsx() async {
+    final (title, cols, rows) = _currentTable();
+    final book = xls.Excel.createExcel();
+    final sheet = book['Sheet1'];
+    sheet.appendRow(cols);
+    for (final r in rows) {
+      sheet.appendRow(r);
+    }
+    final bytes = Uint8List.fromList(book.encode()!);
+    await _saveBytes(bytes, '${_fileTitle(title)}.xlsx', MimeType.microsoftExcel);
+  }
+
+  Future<void> _exportPdf() async {
+    final (title, cols, rows) = _currentTable();
+    final doc = pw.Document();
+
+    final String dateCaption = _rangeStart == null || _rangeEnd == null
+        ? 'All time'
+        : '${DateFormat('dd MMM yyyy').format(_rangeStart!)} → ${DateFormat('dd MMM yyyy').format(_rangeEnd!)}';
+
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4.landscape,
+        build: (ctx) => [
+          pw.Text(title, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 4),
+          pw.Text('Date range: $dateCaption', style: const pw.TextStyle(fontSize: 10)),
+          pw.SizedBox(height: 12),
+          pw.Table.fromTextArray(
+            headers: cols,
+            data: rows,
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            cellStyle: const pw.TextStyle(fontSize: 9),
+            headerDecoration: const pw.BoxDecoration(),
+            border: pw.TableBorder.all(width: 0.3),
+            cellAlignment: pw.Alignment.centerLeft,
+          ),
+        ],
+      ),
+    );
+
+    final bytes = await doc.save();
+    await _saveBytes(bytes, '${_fileTitle(title)}.pdf', MimeType.pdf);
+  }
+
+  String _fileTitle(String title) {
+    final ts = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+    return '${title.replaceAll('/', '-')}_$ts';
+  }
+
+  Future<void> _saveBytes(Uint8List bytes, String fileName, MimeType type) async {
+    try {
+      final path = await FileSaver.instance.saveFile(
+        name: fileName,
+        ext: fileName.split('.').last,
+        bytes: bytes,
+        mimeType: type,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Saved: $fileName')),
+      );
+      try {
+        await OpenFilex.open(path);
+      } catch (_) {}
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save: $e')),
+      );
+    }
+  }
+
   // ------------------------ UI ------------------------
   @override
   Widget build(BuildContext context) {
@@ -348,130 +525,143 @@ class _ReportspageBodyState extends State<ReportspageBody> {
           ? const Center(child: CircularProgressIndicator())
           : _error != null
           ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(_error!, textAlign: TextAlign.center),
-              ),
-            )
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(_error!, textAlign: TextAlign.center),
+        ),
+      )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: _SectionCard(
-                title: "Reports",
-                icon: Icons.bar_chart_rounded,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Quick date chips
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        _quickChip("Today", _setToday),
-                        _quickChip("This Week", _setThisWeek),
-                        _quickChip("This Month", _setThisMonth),
-                        _quickChip("All Time", _setAllTime),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
+        padding: const EdgeInsets.all(16),
+        child: _SectionCard(
+          title: "Reports",
+          icon: Icons.bar_chart_rounded,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Quick date chips
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _quickChip("Today", _setToday),
+                  _quickChip("This Week", _setThisWeek),
+                  _quickChip("This Month", _setThisMonth),
+                  _quickChip("All Time", _setAllTime),
+                ],
+              ),
+              const SizedBox(height: 10),
 
-                    // Date range field
-                    GestureDetector(
-                      key: _fieldKey,
-                      onTap: () => _overlayEntry == null
-                          ? _showCalendar(context)
-                          : _removeOverlay(),
-                      child: Container(
-                        height: 40,
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade400),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.calendar_today, size: 16),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                _selectedDateText,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color:
-                                      _selectedDateText == "pick a date range"
-                                      ? Colors.grey
-                                      : Colors.black,
-                                ),
+              // Date range field + export buttons row
+              GestureDetector(
+                key: _fieldKey,
+                onTap: () => _overlayEntry == null
+                    ? _showCalendar(context)
+                    : _removeOverlay(),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade400),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.calendar_today, size: 16),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _selectedDateText,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: _selectedDateText == "pick a date range"
+                                    ? Colors.grey
+                                    : Colors.black,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      "View, download and share detailed reports for your business operations",
-                      style: TextStyle(fontSize: 12, color: Colors.green),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Tabs
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF2F2F2),
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(10),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _ExportButton(icon: Icons.download, label: 'CSV', onPressed: _exportCsv),
+                          const SizedBox(width: 6),
+                          _ExportButton(icon: Icons.table_chart, label: 'XLSX', onPressed: _exportXlsx),
+                          const SizedBox(width: 6),
+                          _ExportButton(icon: Icons.picture_as_pdf, label: 'PDF', onPressed: _exportPdf),
+                        ],
                       ),
-                      child: SingleChildScrollView(
-                        // <-- add this
-                        scrollDirection: Axis.horizontal, // <-- and this
-                        child: Row(
-                          children: List.generate(_tabs.length, (i) {
-                            final sel = _selectedIndex == i;
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 6),
-                              child: InkWell(
-                                onTap: () => setState(() => _selectedIndex = i),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 180),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: sel
-                                        ? Colors.white
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    _tabs[i],
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: sel
-                                          ? Colors.black87
-                                          : Colors.green,
-                                      fontWeight: sel
-                                          ? FontWeight.w600
-                                          : FontWeight.w400,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 14),
-
-                    // Content
-                    _buildPage(_selectedIndex),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
+
+              const SizedBox(height: 8),
+              const Text(
+                "View, download and share detailed reports for your business operations",
+                style: TextStyle(fontSize: 12, color: Colors.green),
+              ),
+              const SizedBox(height: 16),
+
+              // Tabs
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF2F2F2),
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: List.generate(_tabs.length, (i) {
+                      final sel = _selectedIndex == i;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: InkWell(
+                          onTap: () => setState(() => _selectedIndex = i),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: sel
+                                  ? Colors.white
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              _tabs[i],
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: sel
+                                    ? Colors.black87
+                                    : Colors.green,
+                                fontWeight: sel
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              // Content
+              _buildPage(_selectedIndex),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -484,15 +674,15 @@ class _ReportspageBodyState extends State<ReportspageBody> {
           rows: _agentsFiltered
               .map(
                 (a) => [
-                  a.id,
-                  a.name,
-                  a.email,
-                  a.branch,
-                  a.createdAt != null
-                      ? DateFormat('dd/MM/yyyy').format(a.createdAt!)
-                      : '-',
-                ],
-              )
+              a.id,
+              a.name,
+              a.email,
+              a.branch,
+              a.createdAt != null
+                  ? DateFormat('dd/MM/yyyy').format(a.createdAt!)
+                  : '-',
+            ],
+          )
               .toList(),
         );
       case 1: // Ventures
@@ -502,15 +692,15 @@ class _ReportspageBodyState extends State<ReportspageBody> {
           rows: _venturesFiltered
               .map(
                 (v) => [
-                  v.id,
-                  v.name,
-                  v.treesSold.toString(),
-                  v.totalTrees.toString(),
-                  v.createdAt != null
-                      ? DateFormat('dd/MM/yyyy').format(v.createdAt!)
-                      : '-',
-                ],
-              )
+              v.id,
+              v.name,
+              v.treesSold.toString(),
+              v.totalTrees.toString(),
+              v.createdAt != null
+                  ? DateFormat('dd/MM/yyyy').format(v.createdAt!)
+                  : '-',
+            ],
+          )
               .toList(),
         );
       case 2: // Investments
@@ -520,14 +710,14 @@ class _ReportspageBodyState extends State<ReportspageBody> {
           rows: _investmentsFiltered
               .map(
                 (inv) => [
-                  inv.id,
-                  inv.agent,
-                  _fmtINR(inv.totalAmount),
-                  inv.createdAt != null
-                      ? DateFormat('dd/MM/yyyy').format(inv.createdAt!)
-                      : '-',
-                ],
-              )
+              inv.id,
+              inv.agent,
+              _fmtINR(inv.totalAmount),
+              inv.createdAt != null
+                  ? DateFormat('dd/MM/yyyy').format(inv.createdAt!)
+                  : '-',
+            ],
+          )
               .toList(),
         );
       case 3: // Withdrawals
@@ -537,14 +727,14 @@ class _ReportspageBodyState extends State<ReportspageBody> {
           rows: _withdrawalsFiltered
               .map(
                 (w) => [
-                  w.id,
-                  "${w.agent}${w.referalId.isNotEmpty ? " • ${w.referalId}" : ""}",
-                  _fmtINR(w.amount),
-                  w.date != null
-                      ? DateFormat('dd/MM/yyyy').format(w.date!)
-                      : '-',
-                ],
-              )
+              w.id,
+              "${w.agent}${w.referalId.isNotEmpty ? " • ${w.referalId}" : ""}",
+              _fmtINR(w.amount),
+              w.date != null
+                  ? DateFormat('dd/MM/yyyy').format(w.date!)
+                  : '-',
+            ],
+          )
               .toList(),
         );
       case 4: // Branches
@@ -561,16 +751,16 @@ class _ReportspageBodyState extends State<ReportspageBody> {
           rows: _branchesFiltered
               .map(
                 (b) => [
-                  b.id,
-                  b.name,
-                  b.location,
-                  b.agents.toString(),
-                  b.totalSales.toString(),
-                  b.createdAt != null
-                      ? DateFormat('dd/MM/yyyy').format(b.createdAt!)
-                      : '-',
-                ],
-              )
+              b.id,
+              b.name,
+              b.location,
+              b.agents.toString(),
+              b.totalSales.toString(),
+              b.createdAt != null
+                  ? DateFormat('dd/MM/yyyy').format(b.createdAt!)
+                  : '-',
+            ],
+          )
               .toList(),
         );
       default:
@@ -759,24 +949,49 @@ class _DataTableCard extends StatelessWidget {
                 rows: rows
                     .map(
                       (r) => DataRow(
-                        cells: r
-                            .map(
-                              (cell) => DataCell(
-                                Text(
-                                  cell,
-                                  style: const TextStyle(fontSize: 13),
-                                ),
-                              ),
-                            )
-                            .toList(),
+                    cells: r
+                        .map(
+                          (cell) => DataCell(
+                        Text(
+                          cell,
+                          style: const TextStyle(fontSize: 13),
+                        ),
                       ),
                     )
+                        .toList(),
+                  ),
+                )
                     .toList(),
               ),
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ExportButton extends StatelessWidget {
+  const _ExportButton({required this.icon, required this.label, required this.onPressed});
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 28,
+      child: TextButton.icon(
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          backgroundColor: const Color(0xFFF6FFF6),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: const BorderSide(color: Color(0xFFE0EDE0))),
+        ),
+        onPressed: onPressed,
+        icon: Icon(icon, size: 14),
+        label: Text(label, style: const TextStyle(fontSize: 12)),
+      ),
     );
   }
 }
