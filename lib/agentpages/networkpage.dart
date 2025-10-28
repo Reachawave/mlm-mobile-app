@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:new_project/utils/AuthApi.dart';
 import 'mainpage.dart';
 
 class MyNetworkPage extends StatefulWidget {
@@ -10,338 +11,181 @@ class MyNetworkPage extends StatefulWidget {
 }
 
 class _MyNetworkPageState extends State<MyNetworkPage> {
-  // bool _isExpanded = false; // for arrow toggle
-  // List<String>
-  // referrals = ["Agent 1", "Agent 2", "Agent 3"];
+  bool _loading = true;
+  String? _token;
+  String? _agentId;
 
-  // Suppose this is your data
-  final List<Map<String, dynamic>> levels = [
-    {
-      "level": 1,
-      "referrals": ["Agent A", "Agent B", "Agent C"],
-    },
-    {
-      "level": 2,
-      "referrals": ["Agent D", "Agent E", "Agent F", "Agent G", "Agent H"],
-    },
-    {
-      "level": 3,
-      "referrals": ["Agent I", "Agent J", "Agent K"],
-    },
-    {
-      "level": 4,
-      "referrals": ["Agent L", "Agent M", "Agent N"],
-    },
-  ];
+  /// Map like: "Level1" → List< Map<String, dynamic> >
+  Map<String, dynamic> _treeDetails = {};
 
-  List<bool> _isExpandedList =
-      []; // Track which levels are expanded// sample list
+  // Track expanded levels
+  List<bool> _isExpandedList = [];
 
   @override
   void initState() {
     super.initState();
-    _isExpandedList = List.generate(levels.length, (_) => false);
+    _initAndFetch();
   }
 
+  Future<void> _initAndFetch() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _token = prefs.getString("token");
+      // If you stored agentId as int:
+      final agentIdRaw = prefs.get("agentId");
+      _agentId = agentIdRaw?.toString();
+
+      debugPrint("MyNetworkPage: token=$_token, agentId=$_agentId");
+
+      if (_token == null || _agentId == null) {
+        _showError("Session expired. Please login again.");
+        setState(() => _loading = false);
+        return;
+      }
+
+      await _fetchNetworkLevels();
+    } catch (e, st) {
+      debugPrint("Error in _initAndFetch: $e");
+      debugPrint("Stack: $st");
+      setState(() {
+        _loading = false;
+      });
+      _showError("Initialization error: $e");
+    }
+  }
+
+  Future<void> _fetchNetworkLevels() async {
+    setState(() {
+      _loading = true;
+    });
+    try {
+      final res = await AuthApi().fetchCommissionLevel(
+        token: _token!,
+        agentId: _agentId!,
+      );
+
+      debugPrint("Commission fetch response data: ${res.data}");
+
+      final data = res.data ?? {};
+      final tree = data["treeDetails"] as Map<String, dynamic>? ?? {};
+
+      setState(() {
+        _treeDetails = tree;
+        // Prepare expansion list length
+        _isExpandedList = List<bool>.generate(tree.keys.length, (_) => false);
+        _loading = false;
+      });
+    } catch (e, st) {
+      debugPrint("Error in _fetchNetworkLevels: $e");
+      debugPrint("Stack: $st");
+      setState(() {
+        _loading = false;
+      });
+      _showError("Failed to load network: $e");
+    }
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.red),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Container(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 🔙 Back button + Title
-                Row(
-                  children: [
-                    InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => Agentdashboardmainpage(initialIndex: 0), // 👈 Withdraw tab
-                          ),
-                        );
-                      },
-                      child: Container(
-                        height: 45,
-                        width: 45,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black12, width: 1.0),
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                        child: Image.asset(
-                          'lib/icons/back-arrow.png',
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 20.0),
-                    const Text(
-                      "My Network",
-                      style: TextStyle(
-                        fontSize: 24.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 30.0),
-
-                // 📦 Card Container
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: Colors.grey, width: 1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Referral tree header
-                        Row(
-                          children: [
-                            Container(
-                              height: 23.0,
-                              child: Image.asset(
-                                "lib/icons/decision-tree.png",
-                                color: Colors.green,
-                              ),
-                            ),
-                            const SizedBox(width: 10.0),
-                            const Text(
-                              "Referral Tree",
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 24.0,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Text(
-                          "Your network of referrals, upline and downline",
-                          style: TextStyle(color: Colors.green, fontSize: 16.0),
-                        ),
-
-                        const SizedBox(height: 20.0),
-
-                        // Upline
-                        Container(
-                          height: 80.0,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            border: Border.all(color: Colors.grey, width: 1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(10.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      height: 18.0,
-                                      child: Image.asset(
-                                        "lib/icons/up-arrow.png",
-                                        color: Colors.green,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10.0),
-                                    const Text(
-                                      "Your Upline",
-                                      style: TextStyle(
-                                        color: Colors.green,
-                                        fontSize: 16.0,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10.0),
-                                const Text(
-                                  "You are a top-level agent",
-                                  style: TextStyle(
-                                    color: Colors.green,
-                                    fontSize: 14.0,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 10.0),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  height: 18.0,
-                                  child: Image.asset(
-                                    "lib/icons/ticperson.png",
-                                    color: Colors.green,
-                                  ),
-                                ),
-                                const SizedBox(width: 10.0),
-                                const Text(
-                                  "Your Downline",
-                                  style: TextStyle(
-                                    color: Colors.green,
-                                    fontSize: 16.0,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10.0),
-
-                        ListView.builder(
-                          shrinkWrap:
-                              true, // required when inside Column/SingleChildScrollView
-                          physics:
-                              const NeverScrollableScrollPhysics(), // prevent nested scroll
-                          itemCount: levels.length,
-                          itemBuilder: (context, index) {
-                            final levelData = levels[index];
-                            final level = levelData["level"];
-                            final referrals =
-                                levelData["referrals"] as List<String>;
-                            final isExpanded = _isExpandedList[index];
-
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                InkWell(
-                                  onTap: () {
-                                    setState(() {
-                                      _isExpandedList[index] = !isExpanded;
-                                    });
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 8.0,
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          "Level $level (${referrals.length} Referrals)",
-                                          style: const TextStyle(fontSize: 20),
-                                        ),
-                                        Icon(
-                                          isExpanded
-                                              ? Icons.keyboard_arrow_up
-                                              : Icons.keyboard_arrow_down,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-
-                                if (isExpanded)
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: referrals.map((ref) {
-                                      return Padding(
-                                        padding: const EdgeInsets.only(
-                                          top: 8.0,
-                                          left: 12.0,
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            // 👤 Icon
-                                            Container(
-                                              height: 30,
-                                              width: 30,
-                                              decoration: BoxDecoration(
-                                                color: Colors.green.withOpacity(
-                                                  0.1,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(15),
-                                              ),
-                                              child: Center(
-                                                child: Image.asset(
-                                                  "lib/icons/ticperson.png",
-                                                  height: 18,
-                                                  color: Colors.green,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 10),
-
-                                            // Name
-                                            Expanded(
-                                              child: Text(
-                                                ref,
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: Colors.black,
-                                                ),
-                                              ),
-                                            ),
-
-                                            // Status container
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 12,
-                                                    vertical: 6,
-                                                  ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.green.withOpacity(
-                                                  0.15,
-                                                ),
-                                                border: Border.all(
-                                                  color: Colors.green,
-                                                  width: 1,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              child: const Text(
-                                                "Active",
-                                                style: TextStyle(
-                                                  color: Colors.green,
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ),
-                                SizedBox(height: 10.0),
-                                Divider(color: Colors.grey, thickness: 1),
-                              ],
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+      appBar: AppBar(
+        title: const Text("My Network"),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (c) => Agentdashboardmainpage(initialIndex: 0),
+              ),
+            );
+          },
         ),
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _buildNetworkList(),
+    );
+  }
+
+  Widget _buildNetworkList() {
+    if (_treeDetails.isEmpty) {
+      return const Center(child: Text("No network data found."));
+    }
+
+    final levelKeys = _treeDetails.keys.toList(); // e.g. ["Level1", "Level2", ...]
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: List.generate(levelKeys.length, (index) {
+          final levelKey = levelKeys[index];
+          final referralsDynamic = _treeDetails[levelKey];
+          List<Map<String, dynamic>> referrals = [];
+
+          if (referralsDynamic is List) {
+            referrals = referralsDynamic.cast<Map<String, dynamic>>();
+          }
+
+          final isExpanded = _isExpandedList.length > index
+              ? _isExpandedList[index]
+              : false;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              InkWell(
+                onTap: () {
+                  setState(() {
+                    _isExpandedList[index] = !isExpanded;
+                  });
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "$levelKey (${referrals.length})",
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      Icon(isExpanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down),
+                    ],
+                  ),
+                ),
+              ),
+              if (isExpanded)
+                Padding(
+                  padding: const EdgeInsets.only(left: 16.0),
+                  child: Column(
+                    children: referrals.map((agent) {
+                      final agentName = agent["agentName"]?.toString() ?? "";
+                      final referredName = agent["referedAgentName"]?.toString() ?? "";
+                      final amount = agent["amount"]?.toString() ?? "";
+                      final level = agent["level"]?.toString() ?? "";
+
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        child: ListTile(
+                          title: Text(agentName),
+                          subtitle: Text("Referred: $referredName\nLevel: $level\nAmount: $amount"),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              const Divider(),
+            ],
+          );
+        }),
       ),
     );
   }

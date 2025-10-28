@@ -1,589 +1,522 @@
-// import 'package:flutter/material.dart';
-// import 'package:myprojects/adminpages/WithdrawalRequestPage.dart';
-//
-// import 'CommisionPayoutPage.dart';
-// import 'DashboardPage.dart';
-// import 'ManageAgentsPage.dart';
-// import 'ManageBranches.dart';
-// import 'TotalRevenuePage.dart';
-// import 'TotalVenturesPage.dart';
-//
-// class Referrelpage extends StatelessWidget {
-//   const Referrelpage({super.key});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(body: ReferrelpageBody());
-//   }
-// }
-//
-// class ReferrelpageBody extends StatefulWidget {
-//   const ReferrelpageBody({super.key});
-//
-//   @override
-//   State<ReferrelpageBody> createState() => _ReferrelpageBodyState();
-// }
-//
-// class _ReferrelpageBodyState extends State<ReferrelpageBody> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       drawer: Drawer(
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             SizedBox(height: 30.0),
-//             Row(
-//               mainAxisAlignment: MainAxisAlignment.end,
-//               children: [
-//                 IconButton(
-//                   icon: const Icon(
-//                     Icons.close,
-//                     color: Colors.black54,
-//                     size: 18,
-//                   ),
-//                   onPressed: () {
-//                     Navigator.pop(context); // Close drawer
-//                   },
-//                 ),
-//               ],
-//             ),
-//             Padding(
-//               padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 2),
-//               child: Row(
-//                 children: [
-//                   Icon(Icons.menu, color: Colors.green),
-//                   SizedBox(width: 15),
-//                   Text(
-//                     "Sri Vayutej \nDevelopers",
-//                     style: TextStyle(
-//                       color: Colors.black,
-//                       fontSize: 20,
-//                       fontWeight: FontWeight.bold,
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//             ),
-//             Expanded(
-//               child: ListView(
-//                 children: [
-//                   DrawerMenuRow(
-//                     onTap: () {
-//                       Navigator.pop(context);
-//                       Navigator.push(
-//                         context,
-//                         MaterialPageRoute(
-//                           builder: (context) => const Dashboardpage(),
-//                         ),
-//                       );
-//                     },
-//                     imagePath: "lib/icons/home.png",
-//                     title: "Dashboard",
-//                   ),
-//
-//                   DrawerMenuRow(
-//                     onTap: () {
-//                       Navigator.pop(context);
-//                       Navigator.push(
-//                         context,
-//                         MaterialPageRoute(
-//                           builder: (context) => const ManageAgentPage(),
-//                         ),
-//                       );
-//                     },
-//                     icon: Icons.people_outlined,
-//                     title: "Agents",
-//                   ),
-//                   DrawerMenuRow(
-//                     onTap: () {
-//                       Navigator.pop(context);
-//                       Navigator.push(
-//                         context,
-//                         MaterialPageRoute(
-//                           builder: (context) => const TotalVenturesPage(),
-//                         ),
-//                       );
-//                     },
-//                     imagePath: "lib/icons/bag.png",
-//                     title: "Ventures",
-//                   ),
-//
-//                   DrawerMenuRow(
-//                     onTap: () {
-//                       Navigator.pop(context);
-//                       Navigator.push(
-//                         context,
-//                         MaterialPageRoute(
-//                           builder: (context) => const ManageBranchesPage(),
-//                         ),
-//                       );
-//                     },
-//                     imagePath: "lib/icons/git.png",
-//                     title: "Branches",
-//                   ),
-//                   DrawerMenuRow(
-//                     onTap: () {
-//                       Navigator.pop(context);
-//                       Navigator.push(
-//                         context,
-//                         MaterialPageRoute(
-//                           builder: (context) => const TotalRevenuePage(),
-//                         ),
-//                       );
-//                     },
-//                     icon: Icons.account_balance_wallet_outlined,
-//                     title: "Investments",
-//                   ),
-//                   DrawerMenuRow(
-//                     onTap: () {
-//                       Navigator.pop(context);
-//                       Navigator.push(
-//                         context,
-//                         MaterialPageRoute(
-//                           builder: (context) => const CommisionPayoutPage(),
-//                         ),
-//                       );
-//                     },
-//                     imagePath: "lib/icons/coins.png",
-//                     title: "Payouts",
-//                   ),
-//                   DrawerMenuRow(
-//                     onTap: () {
-//                       Navigator.pop(context);
-//                       // Navigator.push(
-//                       //   context,
-//                       //   MaterialPageRoute(
-//                       //     builder: (context) => const TotalRevenuePage(),
-//                       //   ),
-//                       // );
-//                     },
-//                     imagePath: "lib/icons/decision-tree.png",
-//                     title: "Referral Tree",
-//                   ),
-//                   DrawerMenuRow(
-//                     onTap: () {
-//                       Navigator.pop(context);
-//                       Navigator.push(
-//                         context,
-//                         MaterialPageRoute(
-//                           builder: (context) => const Withdrawalrequestpage(),
-//                         ),
-//                       );
-//                     },
-//                     imagePath: "lib/icons/coins.png",
-//                     title: "Withdrawals",
-//                   ),
-//                   DrawerMenuRow(
-//                     onTap: () {
-//                       Navigator.pop(context);
-//                       // Navigator.push(
-//                       //   context,
-//                       //   MaterialPageRoute(
-//                       //     builder: (context) => const TotalRevenuePage(),
-//                       //   ),
-//                       // );
-//                     },
-//                     imagePath: "lib/icons/charts.png",
-//                     title: "Reports",
-//                   ),
-//                   SizedBox(height: 150),
-//                   InkWell(
-//                     onTap: () {
-//                       Navigator.pop(context);
-//                     },
-//                     child: Padding(
-//                       padding: EdgeInsets.symmetric(horizontal: 30),
-//                       child: Row(
-//                         children: [
-//                           Container(
-//                             height: 24,
-//                             child: Image.asset(
-//                               'lib/icons/back-arrow.png',
-//                               color: Colors.green,
-//                             ),
-//                           ),
-//                           SizedBox(width: 15),
-//                           Text(
-//                             "Go Back",
-//                             style: TextStyle(fontSize: 16, color: Colors.green),
-//                           ),
-//                         ],
-//                       ),
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//       appBar: AppBar(
-//         backgroundColor: Colors.white,
-//         leading: Padding(
-//           padding: EdgeInsets.all(8.0),
-//           child: Container(
-//             height: 15,
-//             decoration: BoxDecoration(
-//               border: Border.all(
-//                 color: Colors.black12, // Sets the color of the border
-//                 width: 1.0, // Sets the width of the border
-//               ),
-//               color: Colors.white,
-//               borderRadius: BorderRadius.circular(
-//                 10.0,
-//               ), // Uniform radius for all corners
-//             ),
-//             child: Builder(
-//               builder: (context) => IconButton(
-//                 icon: const Icon(Icons.menu),
-//                 onPressed: () {
-//                   Scaffold.of(context).openDrawer(); // 👈 open only by button
-//                 },
-//               ),
-//             ),
-//           ),
-//         ),
-//
-//         actions: [
-//           Container(
-//             height: 25,
-//             child: Image.asset('lib/icons/active.png', color: Colors.black),
-//           ),
-//           SizedBox(width: 10.0),
-//           Padding(
-//             padding: EdgeInsets.all(8.0),
-//             child: Container(
-//               height: 30,
-//               child: Image.asset('lib/icons/user.png'),
-//             ),
-//           ),
-//         ],
-//         bottom: PreferredSize(
-//           preferredSize: Size.fromHeight(1),
-//           child: Container(color: Colors.black12, height: 1.0),
-//         ),
-//       ),
-//       body: SingleChildScrollView(
-//         child: Padding(
-//           padding: EdgeInsets.all(16.0),
-//           child: Container(
-//             child: Column(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 Row(
-//                   children: [
-//                     InkWell(
-//                       onTap: () {
-//                         Navigator.pop(context); // Go back to previous page
-//                       },
-//                       child: Container(
-//                         height: 45,
-//                         width: 45,
-//                         decoration: BoxDecoration(
-//                           border: Border.all(color: Colors.black12, width: 1.0),
-//                           color: Colors.white,
-//                           borderRadius: BorderRadius.circular(
-//                             10.0,
-//                           ), // Uniform radius for all corners
-//                         ),
-//                         child: Container(
-//                           height: 8,
-//                           child: Image.asset(
-//                             'lib/icons/back-arrow.png',
-//                             color: Colors.black,
-//                           ),
-//                         ),
-//                       ),
-//                     ),
-//                     SizedBox(width: 20.0),
-//                     Text(
-//                       "Referral Tree",
-//                       style: TextStyle(
-//                         fontSize: 26.0,
-//                         fontWeight: FontWeight.bold,
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//                 SizedBox(height: 20.0),
-//                 Container(
-//                   width: 1000,
-//                   decoration: BoxDecoration(
-//                     border: Border.all(color: Colors.black12, width: 1.0),
-//                     color: Colors.white,
-//                     borderRadius: BorderRadius.circular(
-//                       10.0,
-//                     ), // Uniform radius for all corners
-//                   ),
-//                   child: Padding(
-//                     padding: EdgeInsets.all(10.0),
-//                     child: Column(
-//                       crossAxisAlignment: CrossAxisAlignment.start,
-//                       children: [
-//                         Row(
-//                           mainAxisSize: MainAxisSize.min,
-//                           children: [
-//                             Container(
-//                               height: 24,
-//                               child: Image.asset(
-//                                 'lib/icons/git.png',
-//                                 color: Colors.green,
-//                               ),
-//                             ),
-//                             const SizedBox(
-//                               width: 6,
-//                             ), // spacing between icon and text
-//                             Text(
-//                               "Complete\nRefferal Tree",
-//                               style: TextStyle(
-//                                 fontSize: 24.0,
-//                                 fontWeight: FontWeight.bold,
-//                               ),
-//                             ),
-//                             Row(
-//                               mainAxisAlignment: MainAxisAlignment.end,
-//                               children: [
-//                                 InkWell(
-//                                   onTap: () {},
-//                                   child: Container(
-//                                     padding: const EdgeInsets.symmetric(
-//                                       horizontal: 6,
-//                                       vertical: 4,
-//                                     ),
-//                                     decoration: BoxDecoration(
-//                                       color: Colors.white54,
-//                                       borderRadius: BorderRadius.circular(
-//                                         6,
-//                                       ), // rounded corners
-//                                       border: Border.all(
-//                                         color: Colors.grey, // border color
-//                                         width: 0.5,
-//                                       ),
-//                                     ),
-//                                     child: Row(
-//                                       mainAxisSize: MainAxisSize.min,
-//                                       children: [
-//                                         Container(
-//                                           height: 14,
-//                                           child: Image.asset(
-//                                             'lib/icons/share.png',
-//                                             color: Colors.black,
-//                                           ),
-//                                         ),
-//                                         const SizedBox(
-//                                           width: 6,
-//                                         ), // spacing between icon and text
-//                                         Text(
-//                                           "Share",
-//                                           style: TextStyle(
-//                                             fontSize: 14,
-//                                             color: Colors.black,
-//                                           ),
-//                                         ),
-//                                       ],
-//                                     ),
-//                                   ),
-//                                 ),
-//                                 SizedBox(width: 10),
-//                                 InkWell(
-//                                   onTap: () {},
-//                                   child: Container(
-//                                     padding: const EdgeInsets.symmetric(
-//                                       horizontal: 6,
-//                                       vertical: 4,
-//                                     ),
-//                                     decoration: BoxDecoration(
-//                                       color: Colors.white54,
-//                                       borderRadius: BorderRadius.circular(
-//                                         6,
-//                                       ), // rounded corners
-//                                       border: Border.all(
-//                                         color: Colors.grey, // border color
-//                                         width: 0.5,
-//                                       ),
-//                                     ),
-//                                     child: Row(
-//                                       mainAxisSize: MainAxisSize.min,
-//                                       children: [
-//                                         Container(
-//                                           height: 16,
-//                                           child: Image.asset(
-//                                             'lib/icons/printer.png',
-//                                             color: Colors.black,
-//                                           ),
-//                                         ),
-//                                         const SizedBox(
-//                                           width: 4,
-//                                         ), // spacing between icon and text
-//                                         Text(
-//                                           "Print",
-//                                           style: TextStyle(
-//                                             fontSize: 14,
-//                                             color: Colors.black,
-//                                           ),
-//                                         ),
-//                                       ],
-//                                     ),
-//                                   ),
-//                                 ),
-//                               ],
-//                             ),
-//                           ],
-//                         ),
-//                         Text(
-//                           "Visualize the entire agent network hierarchy",
-//                           style: TextStyle(fontSize: 16.0, color: Colors.green),
-//                         ),
-//                         SizedBox(height: 30.0),
-//                         Container(
-//                           width: 500,
-//                           height: 600, // fixed container height
-//                           decoration: BoxDecoration(
-//                             color: Colors.grey[200],
-//                             border: Border.all(color: Colors.black26),
-//                           ),
-//                           child: Scrollbar(
-//                             thumbVisibility: true,
-//                             child: SingleChildScrollView(
-//                               scrollDirection: Axis.vertical,
-//                               child: Padding(
-//                                 padding: const EdgeInsets.all(16.0),
-//                                 child: Row(
-//                                   crossAxisAlignment: CrossAxisAlignment.start,
-//                                   children: [
-//                                     Column(
-//                                       crossAxisAlignment:
-//                                           CrossAxisAlignment.start,
-//                                       children: [
-//                                         AgentRow(
-//                                           name:
-//                                               columnData[1]['name'] ??
-//                                               'Unknown',
-//                                           id: columnData[1]['id'] ?? '-',
-//                                           imagePath:
-//                                               columnData[1]['image'] ?? '',
-//                                         ),
-//                                         // Vertical line
-//                                         Container(
-//                                           width: 0.5,
-//                                           height: 400, // long vertical line
-//                                           color: Colors.grey,
-//                                         ),
-//                                         // Top agent
-//                                         AgentRow(
-//                                           name:
-//                                               columnData[0]['name'] ??
-//                                               'Unknown',
-//                                           id: columnData[0]['id'] ?? '-',
-//                                           imagePath:
-//                                               columnData[0]['image'] ?? '',
-//                                         ),
-//                                         SizedBox(
-//                                           height: 250,
-//                                         ), // space to bottom agent
-//                                         // Bottom agent
-//                                       ],
-//                                     ),
-//                                   ],
-//                                 ),
-//                               ),
-//                             ),
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }
-//
-// class DrawerMenuRow extends StatelessWidget {
-//   final IconData? icon; // optional icon
-//   final String? imagePath; // optional image
-//   final String title;
-//   final VoidCallback? onTap; // <-- add this
-//
-//   const DrawerMenuRow({
-//     super.key,
-//     this.icon,
-//     this.imagePath,
-//     required this.title,
-//     this.onTap, // <-- accept callback
-//   });
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     Widget leadingWidget;
-//
-//     if (imagePath != null) {
-//       leadingWidget = Image.asset(
-//         imagePath!,
-//         width: 24,
-//         height: 24,
-//         color: Colors.green,
-//       );
-//     } else if (icon != null) {
-//       leadingWidget = Icon(icon, color: Colors.green);
-//     } else {
-//       leadingWidget = const SizedBox(width: 24, height: 24);
-//     }
-//
-//     return InkWell(
-//       onTap: onTap, // <-- call the callback
-//       child: Padding(
-//         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-//         child: Row(
-//           children: [
-//             leadingWidget,
-//             const SizedBox(width: 15),
-//             Text(
-//               title,
-//               style: const TextStyle(fontSize: 20, color: Colors.green),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-//
-// class AgentRow extends StatelessWidget {
-//   final String name;
-//   final String id;
-//   final String imagePath;
-//
-//   const AgentRow({
-//     Key? key,
-//     required this.name,
-//     required this.id,
-//     required this.imagePath,
-//   }) : super(key: key);
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Row(
-//       children: [
-//         CircleAvatar(
-//           radius: 25,
-//           backgroundImage: imagePath.isNotEmpty ? AssetImage(imagePath) : null,
-//           child: imagePath.isEmpty ? Icon(Icons.person) : null,
-//         ),
-//         SizedBox(width: 8),
-//         Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
-//             Text('ID: $id', style: TextStyle(color: Colors.grey)),
-//           ],
-//         ),
-//       ],
-//     );
-//   }
-// }
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:new_project/utils/AuthApi.dart';
+import 'package:new_project/widgets/app_shell.dart';
+
+class ReferralPage extends StatelessWidget {
+  const ReferralPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const AppShell(title: 'Referral Tree', body: _ReferralBody());
+  }
+}
+
+class _ReferralBody extends StatefulWidget {
+  const _ReferralBody({super.key});
+
+  @override
+  State<_ReferralBody> createState() => _ReferralBodyState();
+}
+
+class _ReferralBodyState extends State<_ReferralBody> {
+  AuthApi? _api;
+
+  bool _loadingAgents = true;
+  bool _loadingLevels = false;
+  String? _error;
+
+  final _search = TextEditingController();
+  final _searchFocus = FocusNode();
+
+  List<_AgentLite> _agents = [];
+  _AgentLite? _selected; // selected agent for levels
+
+  // Map level -> list of entries (always keep 1..5 keys)
+  final Map<int, List<_LevelEntry>> _levels = {
+    1: [],
+    2: [],
+    3: [],
+    4: [],
+    5: [],
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _initApiAndLoad();
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    _searchFocus.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initApiAndLoad() async {
+    setState(() {
+      _loadingAgents = true;
+      _error = null;
+    });
+
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final token = sp.getString('token') ?? sp.getString('auth_token') ?? '';
+      if (token.isEmpty) {
+        setState(() {
+          _loadingAgents = false;
+          _error = 'You are not logged in';
+        });
+        return;
+      }
+      _api = AuthApi(token: token);
+      await _loadAgents();
+    } catch (e) {
+      setState(() {
+        _loadingAgents = false;
+        _error = 'Failed to initialize: $e';
+      });
+    }
+  }
+
+  Future<void> _loadAgents() async {
+    try {
+      final resp = await _api!.getAgentDetails();
+      final raw = (resp.data?['agentDetails'] as List?) ?? [];
+      _agents =
+          raw
+              .map((e) => _AgentLite.fromJson(Map<String, dynamic>.from(e)))
+              .toList()
+            ..sort(
+              (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+            );
+
+      setState(() {
+        _loadingAgents = false;
+        _error = null;
+      });
+    } on ApiException catch (e) {
+      setState(() {
+        _loadingAgents = false;
+        _error = e.message;
+      });
+    } catch (e) {
+      setState(() {
+        _loadingAgents = false;
+        _error = 'Failed to load agents: $e';
+      });
+    }
+  }
+
+  Future<void> _loadLevelsFor(_AgentLite agent) async {
+    setState(() {
+      _selected = agent;
+      _loadingLevels = true;
+      for (var i = 1; i <= 5; i++) {
+        _levels[i] = [];
+      }
+    });
+
+    try {
+      // GET /agent/mobile/commision/level/{id}
+      final resp = await _api!.getReferralLevels(agentId: agent.id);
+
+      // Expected: {"treeDetails": {"Level1": [...], "Level2":[...], ...}}
+      final Map<String, dynamic> tree =
+          (resp.data?['treeDetails'] as Map?)?.map(
+            (k, v) => MapEntry(k.toString(), v),
+          ) ??
+          <String, dynamic>{};
+
+      for (var i = 1; i <= 5; i++) {
+        final list = (tree['Level$i'] as List?) ?? const [];
+        _levels[i] = list.map<_LevelEntry>((j) {
+          final m = Map<String, dynamic>.from(j as Map);
+          return _LevelEntry(
+            level: (m['level'] ?? i) as int,
+            amount: (m['amount'] ?? 0).toDouble(),
+            parentAgentId: (m['agentId'] ?? 0) as int,
+            // root id in payload
+            agentReferedId: (m['agentReferedId'] ?? 0) as int,
+            // child id
+            agentName: (m['agentName'] ?? '').toString(),
+            referedAgentName: (m['referedAgentName'] ?? '').toString(),
+          );
+        }).toList();
+      }
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to load levels: $e')));
+    } finally {
+      if (mounted) setState(() => _loadingLevels = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredAgents = _search.text.trim().isEmpty
+        ? _agents
+        : _agents.where((a) {
+            final q = _search.text.trim().toLowerCase();
+            return a.name.toLowerCase().contains(q) ||
+                a.referalId.toLowerCase().contains(q) ||
+                a.email.toLowerCase().contains(q);
+          }).toList();
+
+    if (_loadingAgents) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(_error!, textAlign: TextAlign.center),
+        ),
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, c) {
+        final wide = c.maxWidth >= 900;
+
+        if (wide) {
+          // Side-by-side on wide screens
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(width: 360, child: _agentsPanel(filteredAgents)),
+              const VerticalDivider(
+                width: 1,
+                thickness: 1,
+                color: Color(0xFFECECEC),
+              ),
+              // Levels on the right
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: _levelsPanel(),
+                ),
+              ),
+            ],
+          );
+        } else {
+          // Stacked on narrow screens (mobile)
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _agentsPanel(filteredAgents),
+                const SizedBox(height: 12),
+                _levelsPanel(),
+              ],
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  // ---------------- UI: Agents panel ----------------
+  Widget _agentsPanel(List<_AgentLite> filteredAgents) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Agents',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _search,
+            focusNode: _searchFocus,
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              hintText: 'Search by name / referral / email...',
+              prefixIcon: const Icon(Icons.search),
+              contentPadding: const EdgeInsets.all(10),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.grey),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.grey),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.green, width: 2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.black12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: filteredAgents.length,
+              separatorBuilder: (_, __) =>
+                  const Divider(height: 1, color: Color(0xFFECECEC)),
+              itemBuilder: (context, i) {
+                final a = filteredAgents[i];
+                final selected = _selected?.id == a.id;
+                return ListTile(
+                  dense: true,
+                  selected: selected,
+                  selectedTileColor: Colors.green.shade50,
+                  title: Text(
+                    a.name,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Text(
+                    a.referalId,
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _loadLevelsFor(a),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------- UI: Levels panel ----------------
+  Widget _levelsPanel() {
+    if (_selected == null) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.only(top: 40),
+          child: Text('Select an agent to view referral levels (up to 5).'),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header of selected agent
+        Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: const BoxDecoration(
+                color: Color(0xFFEDEDED),
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _selected!.name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'ID: ${_selected!.referalId}',
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF9FAF3),
+            border: Border.all(color: const Color(0xFFE4E9D0)),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: _loadingLevels
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (int lvl = 1; lvl <= 5; lvl++) ...[
+                      if (lvl > 1) const SizedBox(height: 6),
+                      _levelGroup(
+                        level: lvl,
+                        entries: _levels[lvl] ?? const [],
+                      ),
+                    ],
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _levelGroup({required int level, required List<_LevelEntry> entries}) {
+    return Container(
+      margin: EdgeInsets.only(left: level == 1 ? 0 : 18),
+      padding: EdgeInsets.only(left: level == 1 ? 0 : 18, top: 6, bottom: 6),
+      decoration: level == 1
+          ? null
+          : const BoxDecoration(
+              border: Border(
+                left: BorderSide(color: Color(0xFFDCE4C3), width: 2),
+              ),
+            ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Level title row
+          Row(
+            children: [
+              _levelBadge(level),
+              const SizedBox(width: 8),
+              Text(
+                'Level $level',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          if (entries.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(left: 34),
+              child: Text(
+                'No entries',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+              ),
+            )
+          else
+            for (final e in entries) ...[
+              Padding(
+                padding: const EdgeInsets.only(left: 34, bottom: 10),
+                child: _nodeTile(
+                  title: e.referedAgentName.isNotEmpty
+                      ? e.referedAgentName
+                      : 'ID: ${e.agentReferedId}',
+                  subtitle: 'ID: ${e.agentReferedId}',
+                ),
+              ),
+            ],
+        ],
+      ),
+    );
+  }
+
+  Widget _levelBadge(int level) {
+    return Container(
+      width: 26,
+      height: 26,
+      decoration: const BoxDecoration(
+        color: Color(0xFFE0E0E0),
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        '$level',
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  Widget _nodeTile({required String title, required String subtitle}) {
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: const BoxDecoration(
+            color: Color(0xFFEDEDED),
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+// --------- DTOs ---------
+class _AgentLite {
+  final int id;
+  final String name;
+  final String referalId;
+  final String email;
+
+  const _AgentLite({
+    required this.id,
+    required this.name,
+    required this.referalId,
+    required this.email,
+  });
+
+  factory _AgentLite.fromJson(Map<String, dynamic> j) => _AgentLite(
+    id: (j['id'] ?? 0) as int,
+    name: (j['name'] ?? '').toString(),
+    referalId: (j['referalId'] ?? '').toString(),
+    email: (j['email'] ?? '').toString(),
+  );
+}
+
+class _LevelEntry {
+  final int level;
+  final double amount;
+  final int parentAgentId; // the root id in the payload
+  final int agentReferedId; // the child id on this level
+  final String agentName;
+  final String referedAgentName;
+
+  const _LevelEntry({
+    required this.level,
+    required this.amount,
+    required this.parentAgentId,
+    required this.agentReferedId,
+    required this.agentName,
+    required this.referedAgentName,
+  });
+}

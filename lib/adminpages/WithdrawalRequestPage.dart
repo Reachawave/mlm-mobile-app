@@ -1,616 +1,427 @@
 import 'package:flutter/material.dart';
-import 'package:new_project/adminpages/ProcessWithdrawalPage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'CommisionPayoutPage.dart';
-import 'DashboardPage.dart';
-import 'ManageAgentsPage.dart';
-import 'ManageBranches.dart';
-import 'TotalRevenuePage.dart';
-import 'TotalVenturesPage.dart';
+import 'package:new_project/widgets/app_shell.dart';
+import 'package:new_project/utils/AuthApi.dart';
+import 'package:new_project/models/withdrawl_item.dart';
+import 'package:new_project/adminpages/ProcessWithdrawalPage.dart';
 
 class Withdrawalrequestpage extends StatelessWidget {
   const Withdrawalrequestpage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: WithdrawalrequestpageBody());
+    return const AppShell(title: 'Withdrawals', body: _WithdrawalRequestBody());
   }
 }
 
-class WithdrawalrequestpageBody extends StatelessWidget {
-  const WithdrawalrequestpageBody({super.key});
+class _WithdrawalRequestBody extends StatefulWidget {
+  const _WithdrawalRequestBody({super.key});
+
+  @override
+  State<_WithdrawalRequestBody> createState() => _WithdrawalRequestBodyState();
+}
+
+class _WithdrawalRequestBodyState extends State<_WithdrawalRequestBody> {
+  AuthApi? _api;
+
+  bool _loading = true;
+  String? _error;
+
+  final _search = TextEditingController();
+  final _focusNode = FocusNode();
+
+  List<WithdrawlBalanceItem> _balances = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _initApiAndLoad();
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initApiAndLoad() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final token = sp.getString('token') ?? sp.getString('auth_token') ?? '';
+      if (token.isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _loading = false;
+          _error = 'You are not logged in';
+        });
+        return;
+      }
+      _api = AuthApi(token: token);
+      await _loadBalances();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'Failed to initialize: $e';
+      });
+    }
+  }
+
+  Future<void> _loadBalances() async {
+    try {
+      final balResp = await _api!.getWithdrawlBalanceAdmin();
+      final balRaw = (balResp.data?['withdrawlDetails'] as List?) ?? [];
+      final items = balRaw
+          .map(
+            (e) => WithdrawlBalanceItem.fromJson(Map<String, dynamic>.from(e)),
+          )
+          .toList();
+
+      if (!mounted) return;
+      setState(() {
+        _balances = items;
+        _loading = false;
+        _error = null;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = e.message;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'Failed to load: $e';
+      });
+    }
+  }
+
+  Future<void> _openProcess(WithdrawlBalanceItem item) async {
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => Processwithdrawalpage(item: item)),
+    );
+    if (updated == true) {
+      await _loadBalances();
+    }
+  }
+
+  String _fmtAmount(double v) {
+    final s = v.toStringAsFixed(v.truncateToDouble() == v ? 0 : 2);
+    return '₹ $s';
+  }
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, String>> data = [
-      {"name": "Chinnala Tyuh", "amount": "3000", "date": "16/08/2025"},
-      {
-        "name": "adulapuram rajendra prasad",
-        "amount": "500",
-        "date": "08/08/2025",
-      },
-      {"name": "sulekha reddi", "amount": "5000", "date": "01/08/2025"},
-    ];
-    return Scaffold(
-      drawer: Drawer(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 30.0),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.close,
-                    color: Colors.black54,
-                    size: 18,
-                  ),
-                  onPressed: () {
-                    Navigator.pop(context); // Close drawer
-                  },
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 2),
-              child: Row(
-                children: [
-                  Icon(Icons.menu, color: Colors.green),
-                  SizedBox(width: 15),
-                  Text(
-                    "Sri Vayutej \nDevelopers",
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                children: [
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const Dashboardpage(),
-                        ),
-                      );
-                    },
-                    imagePath: "lib/icons/home.png",
-                    title: "Dashboard",
-                  ),
-
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ManageAgentPage(),
-                        ),
-                      );
-                    },
-                    icon: Icons.people_outlined,
-                    title: "Agents",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const TotalVenturesPage(),
-                        ),
-                      );
-                    },
-                    imagePath: "lib/icons/bag.png",
-                    title: "Ventures",
-                  ),
-
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ManageBranchesPage(),
-                        ),
-                      );
-                    },
-                    imagePath: "lib/icons/git.png",
-                    title: "Branches",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const TotalRevenuePage(),
-                        ),
-                      );
-                    },
-                    icon: Icons.account_balance_wallet_outlined,
-                    title: "Investments",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CommisionPayoutPage(),
-                        ),
-                      );
-                    },
-                    imagePath: "lib/icons/coins.png",
-                    title: "Payouts",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (context) => const TotalRevenuePage(),
-                      //   ),
-                      // );
-                    },
-                    imagePath: "lib/icons/decision-tree.png",
-                    title: "Referral Tree",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const Withdrawalrequestpage(),
-                        ),
-                      );
-                    },
-                    imagePath: "lib/icons/coins.png",
-                    title: "Withdrawals",
-                  ),
-                  DrawerMenuRow(
-                    onTap: () {
-                      Navigator.pop(context);
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (context) => const TotalRevenuePage(),
-                      //   ),
-                      // );
-                    },
-                    imagePath: "lib/icons/charts.png",
-                    title: "Reports",
-                  ),
-                  SizedBox(height: 150),
-                  InkWell(
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 30),
-                      child: Row(
-                        children: [
-                          Container(
-                            height: 24,
-                            child: Image.asset(
-                              'lib/icons/back-arrow.png',
-                              color: Colors.green,
-                            ),
-                          ),
-                          SizedBox(width: 15),
-                          Text(
-                            "Go Back",
-                            style: TextStyle(fontSize: 16, color: Colors.green),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        leading: Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Container(
-            height: 15,
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Colors.black12, // Sets the color of the border
-                width: 1.0, // Sets the width of the border
-              ),
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(
-                10.0,
-              ), // Uniform radius for all corners
-            ),
-            child: Builder(
-              builder: (context) => IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () {
-                  Scaffold.of(context).openDrawer(); // 👈 open only by button
-                },
-              ),
-            ),
-          ),
-        ),
-
-        actions: [
-          Container(
-            height: 25,
-            child: Image.asset('lib/icons/active.png', color: Colors.black),
-          ),
-          SizedBox(width: 10.0),
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Container(
-              height: 30,
-              child: Image.asset('lib/icons/user.png'),
-            ),
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Container(color: Colors.black12, height: 1.0),
-        ),
-      ),
-      body: SingleChildScrollView(
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Container(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(_error!, textAlign: TextAlign.center),
+        ),
+      );
+    }
+
+    final q = _search.text.trim().toLowerCase();
+    final filtered = q.isEmpty
+        ? _balances
+        : _balances.where((b) {
+            return b.name.toLowerCase().contains(q) ||
+                b.referalId.toLowerCase().contains(q) ||
+                b.email.toLowerCase().contains(q);
+          }).toList();
+
+    return RefreshIndicator(
+      onRefresh: _loadBalances,
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final isWide = c.maxWidth >= 720;
+          return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    InkWell(
-                      onTap: () {
-                        Navigator.pop(context); // Go back to previous page
-                      },
-                      child: Container(
-                        height: 45,
-                        width: 45,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black12, width: 1.0),
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(
-                            10.0,
-                          ), // Uniform radius for all corners
-                        ),
-                        child: Container(
-                          height: 8,
-                          child: Image.asset(
-                            'lib/icons/back-arrow.png',
-                            color: Colors.black,
-                          ),
-                        ),
+                // Search
+                TextField(
+                  controller: _search,
+                  focusNode: _focusNode,
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    hintText: 'Search by name / referral / email...',
+                    prefixIcon: const Icon(Icons.search),
+                    contentPadding: const EdgeInsets.all(10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.grey),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.grey),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: Colors.green,
+                        width: 2,
                       ),
                     ),
-                    SizedBox(width: 20.0),
-                    Text(
-                      "Withdrawal Requests",
-                      style: TextStyle(
-                        fontSize: 24.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                SizedBox(height: 20.0),
+                const SizedBox(height: 20),
+
+                // Balances card
                 Container(
-                  width: 1000,
+                  width: double.infinity,
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black12, width: 1.0),
+                    border: Border.all(color: Colors.black12, width: 1),
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(
-                      10.0,
-                    ), // Uniform radius for all corners
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Padding(
-                    padding: EdgeInsets.all(20.0),
+                    padding: const EdgeInsets.all(20.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          children: [
-                            Container(
-                              height: 25,
-                              child: Image.asset(
-                                'lib/icons/coins.png',
-                                color: Colors.green,
-                              ),
+                          children: const [
+                            Icon(
+                              Icons.account_balance_wallet_outlined,
+                              size: 24,
+                              color: Colors.green,
                             ),
-                            SizedBox(width: 10.0),
+                            SizedBox(width: 10),
                             Text(
-                              "Withdrawal Requests",
+                              "Agent Balances",
                               style: TextStyle(
-                                fontSize: 22.0,
+                                fontSize: 22,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
                         ),
-                        Text(
-                          "Review and process pending withdrawal requests",
-                          style: TextStyle(fontSize: 12.0, color: Colors.green),
+                        const Text(
+                          "Available balance for each agent (from /admin/mobile/withdrawl/balance)",
+                          style: TextStyle(fontSize: 12, color: Colors.green),
                         ),
-                        SizedBox(height: 20.0),
-                        Padding(
-                          padding: const EdgeInsets.all(10.0),
-                          child: Row(
-                            children: [
-                              Text(
-                                "Agent",
-                                style: TextStyle(
-                                  fontSize: 14.0,
-                                  color: Colors.green,
-                                ),
-                              ),
-                              SizedBox(width: 55.0),
-                              Text(
-                                "Amount",
-                                style: TextStyle(
-                                  fontSize: 14.0,
-                                  color: Colors.green,
-                                ),
-                              ),
-                              SizedBox(width: 100.0),
-                              Text(
-                                "Actions",
-                                style: TextStyle(
-                                  fontSize: 14.0,
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 3.0),
-                        // Divider(thickness: 0.3, color: Colors.green),
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: data.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            final item = data[index];
-                            final name = item["name"] ?? '';
-                            final date = item["date"] ?? '';
-                            final amount = item["amount"] ?? '';
+                        const SizedBox(height: 16),
 
-                            return Column(
-                              children: [
-                                const Divider(
-                                  thickness: 0.3,
-                                  color: Colors.green,
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // Name + ID
-                                      // Name + ID column (auto-wrap)
-                                      Expanded(
-                                        flex: 1,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              name,
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.black,
-                                              ),
-                                              softWrap: true,
-                                              overflow: TextOverflow.visible,
-                                              maxLines: null,
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              date,
-                                              style: const TextStyle(
-                                                fontSize: 10,
-                                                color: Colors.green,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(width: 30),
-                                      Expanded(
-                                        flex: 1,
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            SizedBox(height: 18.0),
-                                            Text(
-                                              amount,
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.black,
-                                              ),
-                                              softWrap: true,
-                                              overflow: TextOverflow.visible,
-                                              maxLines: null,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(width: 30),
-                                      Column(
-                                        children: [
-                                          SizedBox(height: 15),
-                                          Row(
-                                            children: [
-                                              InkWell(
-                                                onTap: () {
-                                                  Navigator.pop(context);
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          const Processwithdrawalpage(),
-                                                    ),
-                                                  );
-                                                },
-                                                child: Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 6,
-                                                        vertical: 4,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.green,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          6,
-                                                        ), // rounded corners
-                                                    border: Border.all(
-                                                      color: Colors
-                                                          .grey, // border color
-                                                      width: 0.5,
-                                                    ),
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      Text(
-                                                        "Process",
-                                                        style: TextStyle(
-                                                          fontSize: 12,
-                                                          color: Colors.white,
-                                                        ),
-                                                      ),
-                                                      SizedBox(width: 6),
-                                                      Container(
-                                                        color: Colors.green,
-                                                        height: 14,
-                                                        child: Image.asset(
-                                                          'lib/icons/right-arrow.png',
-                                                          color: Colors.white,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                              SizedBox(width: 6),
-                                              Container(
-                                                width: 26,
-                                                height: 26,
-                                                decoration: BoxDecoration(
-                                                  // border: Border.all(
-                                                  //   color: Colors.black12,
-                                                  //   width: 1.0,
-                                                  // ),
-                                                  color: Colors.red,
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                        6.0,
-                                                      ),
-                                                ),
-                                                child: Center(
-                                                  // centers the image inside the container
-                                                  child: Image.asset(
-                                                    'lib/icons/close.png',
-                                                    color: Colors.white,
-                                                    height: 15, //
-                                                    width:
-                                                        15, // optional, keeps square aspect
-                                                    fit: BoxFit.contain,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
+                        if (filtered.isEmpty)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 20),
+                            alignment: Alignment.centerLeft,
+                            child: const Text(
+                              'No balances found.',
+                              style: TextStyle(color: Colors.black54),
+                            ),
+                          )
+                        else if (isWide)
+                          _BalanceTableView(
+                            items: filtered,
+                            onProcess: _openProcess,
+                          )
+                        else
+                          _BalanceCardListView(
+                            items: filtered,
+                            onProcess: _openProcess,
+                          ),
                       ],
                     ),
                   ),
                 ),
               ],
             ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ------- WIDE VIEW: DataTable for balances with Process action -------
+class _BalanceTableView extends StatelessWidget {
+  const _BalanceTableView({required this.items, required this.onProcess});
+
+  final List<WithdrawlBalanceItem> items;
+  final ValueChanged<WithdrawlBalanceItem> onProcess;
+
+  @override
+  Widget build(BuildContext context) {
+    String _fmtAmount(double v) {
+      final s = v.toStringAsFixed(v.truncateToDouble() == v ? 0 : 2);
+      return '₹ $s';
+    }
+
+    final rows = items.map((b) {
+      return DataRow(
+        cells: [
+          DataCell(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(b.name, style: const TextStyle(fontSize: 13)),
+                const SizedBox(height: 2),
+                Text(
+                  b.referalId,
+                  style: const TextStyle(fontSize: 11, color: Colors.green),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  b.email,
+                  style: const TextStyle(fontSize: 11, color: Colors.black54),
+                ),
+              ],
+            ),
           ),
+          DataCell(
+            Text(
+              _fmtAmount(b.balanceAmount),
+              style: const TextStyle(fontSize: 13),
+            ),
+          ),
+          DataCell(
+            ElevatedButton.icon(
+              onPressed: b.balanceAmount > 0 ? () => onProcess(b) : null,
+              icon: const Icon(Icons.chevron_right, size: 16),
+              label: const Text('Process', style: TextStyle(fontSize: 12)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: b.balanceAmount > 0
+                    ? Colors.green
+                    : Colors.grey,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }).toList();
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 680),
+        child: DataTable(
+          headingTextStyle: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Colors.green,
+          ),
+          dataRowMinHeight: 48,
+          dataRowMaxHeight: 64,
+          columnSpacing: 24,
+          columns: const [
+            DataColumn(label: Text('Agent')),
+            DataColumn(label: Text('Balance')),
+            DataColumn(label: Text('Actions')),
+          ],
+          rows: rows,
         ),
       ),
     );
   }
 }
 
-class DrawerMenuRow extends StatelessWidget {
-  final IconData? icon; // optional icon
-  final String? imagePath; // optional image
-  final String title;
-  final VoidCallback? onTap; // <-- add this
+// ------- NARROW VIEW: Cards for balances with Process action -------
+class _BalanceCardListView extends StatelessWidget {
+  const _BalanceCardListView({required this.items, required this.onProcess});
 
-  const DrawerMenuRow({
-    super.key,
-    this.icon,
-    this.imagePath,
-    required this.title,
-    this.onTap, // <-- accept callback
-  });
+  final List<WithdrawlBalanceItem> items;
+  final ValueChanged<WithdrawlBalanceItem> onProcess;
 
   @override
   Widget build(BuildContext context) {
-    Widget leadingWidget;
-
-    if (imagePath != null) {
-      leadingWidget = Image.asset(
-        imagePath!,
-        width: 24,
-        height: 24,
-        color: Colors.green,
-      );
-    } else if (icon != null) {
-      leadingWidget = Icon(icon, color: Colors.green);
-    } else {
-      leadingWidget = const SizedBox(width: 24, height: 24);
+    String _fmtAmount(double v) {
+      final s = v.toStringAsFixed(v.truncateToDouble() == v ? 0 : 2);
+      return '₹ $s';
     }
 
-    return InkWell(
-      onTap: onTap, // <-- call the callback
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-        child: Row(
-          children: [
-            leadingWidget,
-            const SizedBox(width: 15),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 20, color: Colors.green),
-            ),
-          ],
-        ),
-      ),
+    return ListView.separated(
+      itemCount: items.length,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (_, i) {
+        final b = items[i];
+        return Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.black12, width: 1),
+            borderRadius: BorderRadius.circular(10),
+            color: Colors.white,
+          ),
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                b.name,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                b.referalId,
+                style: const TextStyle(fontSize: 12, color: Colors.green),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                b.email,
+                style: const TextStyle(fontSize: 12, color: Colors.black54),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        'Balance: ',
+                        style: TextStyle(fontSize: 12, color: Colors.black54),
+                      ),
+                      Text(
+                        _fmtAmount(b.balanceAmount),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: b.balanceAmount > 0 ? () => onProcess(b) : null,
+                    icon: const Icon(Icons.chevron_right, size: 16),
+                    label: const Text('Process'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: b.balanceAmount > 0
+                          ? Colors.green
+                          : Colors.grey,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

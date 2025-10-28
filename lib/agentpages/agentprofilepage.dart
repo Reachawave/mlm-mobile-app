@@ -1,52 +1,130 @@
 import 'package:flutter/material.dart';
-
+import '../utils/AuthApi.dart';
 import 'mainpage.dart';
 
-class prifilepage extends StatelessWidget {
-  const prifilepage({super.key});
+class ProfilePage extends StatelessWidget {
+  final String agentId;
+  final String token;
+
+  const ProfilePage({Key? key, required this.agentId, required this.token})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return  profilebody();
+    return ProfileBody(agentId: agentId, token: token);
   }
 }
 
+class ProfileBody extends StatefulWidget {
+  final String agentId;
+  final String token;
 
-
-class profilebody extends StatefulWidget {
-  const profilebody({super.key});
+  const ProfileBody({Key? key, required this.agentId, required this.token})
+    : super(key: key);
 
   @override
-  State<profilebody> createState() => _profilebodyState();
+  State<ProfileBody> createState() => _ProfileBodyState();
 }
 
-class _profilebodyState extends State<profilebody> {
+class _ProfileBodyState extends State<ProfileBody> {
+  bool _isLoading = true;
+  String? _errorMessage;
 
-  void showUserFormDialog(BuildContext context) {
-    final TextEditingController nameController = TextEditingController();
-    final TextEditingController fatherNameController = TextEditingController();
-    final TextEditingController emailController = TextEditingController();
-    final TextEditingController mobileController = TextEditingController();
-    final TextEditingController pancardController = TextEditingController();
-    final TextEditingController aadharController = TextEditingController();
-    final TextEditingController accountnumController = TextEditingController();
-    final TextEditingController ifsccodeController = TextEditingController();
+  Map<String, dynamic>? _agentDetail;
 
+  @override
+  void initState() {
+    super.initState();
+    _fetchAgentDetail();
+  }
 
+  Future<void> _fetchAgentDetail() async {
+    try {
+      final api = AuthApi();
+      final ApiResponse resp = await api.viewAgentProfile(
+        agentId: widget.agentId,
+        token: widget.token,
+      );
+
+      if (resp.isSuccess) {
+        final data = resp.data;
+        if (data != null && data.containsKey('agentDetails')) {
+          final arr = data['agentDetails'] as List;
+          if (arr.isNotEmpty) {
+            setState(() {
+              _agentDetail = Map<String, dynamic>.from(arr.first as Map);
+              _isLoading = false;
+            });
+          } else {
+            setState(() {
+              _errorMessage = "No agent details found";
+              _isLoading = false;
+            });
+          }
+        } else {
+          setState(() {
+            _errorMessage = "Invalid response structure";
+            _isLoading = false;
+          });
+        }
+      } else {
+        setState(() {
+          _errorMessage = resp.message;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  // ================== EDIT DIALOG ==================
+  void showUserFormDialog(BuildContext ctx) {
+    if (_agentDetail == null) return;
+
+    // controllers seeded from current detail
+    final nameController = TextEditingController(
+      text: _agentDetail!['name']?.toString() ?? '',
+    );
+    final otherNameController = TextEditingController(
+      text: _agentDetail!['otherName']?.toString() ?? '',
+    );
+    final fatherNameController = TextEditingController(
+      text: _agentDetail!['fatherName']?.toString() ?? '',
+    );
+    final emailController = TextEditingController(
+      text: _agentDetail!['email']?.toString() ?? '',
+    );
+    final mobileController = TextEditingController(
+      text: _agentDetail!['contactNumber']?.toString() ?? '',
+    );
+    final pancardController = TextEditingController(
+      text: _agentDetail!['panNo']?.toString() ?? '',
+    );
+    final aadharController = TextEditingController(
+      text: _agentDetail!['aadharNo']?.toString() ?? '',
+    );
+    final accountnumController = TextEditingController(
+      text: _agentDetail!['accountNo']?.toString() ?? '',
+    );
+    final ifsccodeController = TextEditingController(
+      text: _agentDetail!['ifscCode']?.toString() ?? '',
+    );
 
     showDialog(
-      context: context,
+      context: ctx,
       builder: (BuildContext context) {
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (context, setStateSB) {
             return Dialog(
-
-              insetPadding: EdgeInsets.zero, // 👈 removes default margins
-              child: Container(
+              insetPadding: EdgeInsets.zero,
+              child: SizedBox(
                 width: double.infinity,
                 height: double.infinity,
                 child: Column(
-
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
@@ -58,12 +136,11 @@ class _profilebodyState extends State<profilebody> {
                         ),
                       ],
                     ),
-
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const Text(
+                      children: const [
+                        Text(
                           "Edit Your Profile",
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -72,22 +149,15 @@ class _profilebodyState extends State<profilebody> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 5),
+                        SizedBox(height: 5),
                         Text(
-                          "Modify your personal and bank details.Critical",
+                          "Modify your personal and bank details. Critical changes will require OTP verification.",
                           textAlign: TextAlign.center,
                           style: TextStyle(color: Colors.green, fontSize: 14.0),
                         ),
-                        Text(
-                          "changes will require OTP verification.",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.green, fontSize: 14.0),
-                        ),
-                        const SizedBox(height: 10),
                       ],
                     ),
-
-                    // 👇 scrollable form
+                    const SizedBox(height: 10),
                     Expanded(
                       child: SingleChildScrollView(
                         child: Padding(
@@ -95,230 +165,110 @@ class _profilebodyState extends State<profilebody> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("Name"),
-                              SizedBox(height: 6.0),
-                              TextField(
-                                controller: nameController,
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(
-                                      color: Colors
-                                          .green, // 👈 border color when clicked/focused
-                                      width: 2.0,
-                                    ),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 10, // 👈 height of TextField
-                                    horizontal: 20,
-                                  ),
-                                ),
-                              ),
-
+                              _buildField("Name", nameController),
                               const SizedBox(height: 10),
-                              Text("Father's Name"),
-                              SizedBox(height: 6.0),
-                              TextField(
-                                controller: fatherNameController,
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(
-                                      color: Colors
-                                          .green, // 👈 border color when clicked/focused
-                                      width: 2.0,
-                                    ),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 10, // 👈 height of TextField
-                                    horizontal: 20,
-                                  ),
-                                ),
-                              ),
-
+                              _buildField("Other's Name", otherNameController),
                               const SizedBox(height: 10),
-                              Text("Email (Cannot be changed)"),
-                              SizedBox(height: 6.0),
-                              TextField(
-                                controller: emailController,
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(
-                                      color: Colors
-                                          .green, // 👈 border color when clicked/focused
-                                      width: 2.0,
-                                    ),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 10, // 👈 height of TextField
-                                    horizontal: 20,
-                                  ),
-                                ),
-                              ),
-
-                              SizedBox(height: 10.0),
-                              Text("Mobile"),
-                              SizedBox(height: 6.0),
-                              TextField(
-                                controller: mobileController,
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(
-                                      color: Colors
-                                          .green, // 👈 border color when clicked/focused
-                                      width: 2.0,
-                                    ),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 10, // 👈 height of TextField
-                                    horizontal: 20,
-                                  ),
-                                ),
-                              ),
-
-                              const SizedBox(height: 10),
-                              Text("PAN Card"),
-                              SizedBox(height: 6.0),
-                              TextField(
-                                controller: pancardController,
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(
-                                      color: Colors
-                                          .green, // 👈 border color when clicked/focused
-                                      width: 2.0,
-                                    ),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 10, // 👈 height of TextField
-                                    horizontal: 20,
-                                  ),
-                                ),
+                              _buildField(
+                                "Father's Name",
+                                fatherNameController,
                               ),
                               const SizedBox(height: 10),
-                              Text("Aadhar Number"),
-                              SizedBox(height: 6.0),
-                              TextField(
-                                controller: aadharController,
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(
-                                      color: Colors
-                                          .green, // 👈 border color when clicked/focused
-                                      width: 2.0,
-                                    ),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 10, // 👈 height of TextField
-                                    horizontal: 20,
-                                  ),
-                                ),
+                              _buildField(
+                                "Email (Cannot be changed)",
+                                emailController,
+                                enabled: false,
                               ),
-
                               const SizedBox(height: 10),
-                              Text("Bank Account Number"),
-                              SizedBox(height: 6.0),
-                              TextField(
-                                controller: accountnumController,
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(
-                                      color: Colors
-                                          .green, // 👈 border color when clicked/focused
-                                      width: 2.0,
-                                    ),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 10, // 👈 height of TextField
-                                    horizontal: 20,
-                                  ),
-                                ),
-                              ),
-
+                              _buildField("Mobile", mobileController),
                               const SizedBox(height: 10),
-                              Text("IFSC Code"),
-                              SizedBox(height: 6.0),
-                              TextField(
-                                controller: ifsccodeController,
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(
-                                      color: Colors
-                                          .green, // 👈 border color when clicked/focused
-                                      width: 2.0,
-                                    ),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 10, // 👈 height of TextField
-                                    horizontal: 20,
-                                  ),
-                                ),
+                              _buildField("PAN Card", pancardController),
+                              const SizedBox(height: 10),
+                              _buildField("Aadhar Number", aadharController),
+                              const SizedBox(height: 10),
+                              _buildField(
+                                "Bank Account Number",
+                                accountnumController,
                               ),
-
-                              SizedBox(height: 20),
+                              const SizedBox(height: 10),
+                              _buildField("IFSC Code", ifsccodeController),
+                              const SizedBox(height: 20),
                               SizedBox(
-                                width:
-                                double.infinity, // take full available width
+                                width: double.infinity,
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors
-                                        .green, // 👈 button background color
+                                    backgroundColor: Colors.green,
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                        12,
-                                      ), // 👈 border radius
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 10,
-                                    ), // taller button
+                                    ),
                                   ),
-                                  onPressed: () {
-                                    print("Name: ${nameController.text}");
-                                    print(
-                                      "Father Name: ${fatherNameController.text}",
-                                    );
-                                    print("Email: ${emailController.text}");
-                                    print("Mobile: ${mobileController.text}");
-                                    Navigator.of(context).pop();
+                                  onPressed: () async {
+                                    // build update body: keep both otherName and fatherName
+                                    final Map<String, dynamic> body = {
+                                      "name": nameController.text,
+                                      "aadharNo": aadharController.text,
+                                      "address": _agentDetail!['address'] ?? "",
+                                      "bankName":
+                                          _agentDetail!['bankName'] ?? "",
+                                      "ifscCode": ifsccodeController.text,
+                                      "accountNo": accountnumController.text,
+                                      "accountHolderName": nameController.text,
+                                      "otherName": otherNameController.text,
+                                      // distinct
+                                      "fatherName": fatherNameController.text,
+                                      // NEW field
+                                      "panNo": pancardController.text,
+                                    };
+
+                                    try {
+                                      final api = AuthApi();
+                                      final ApiResponse resp = await api
+                                          .updateAgentProfile(
+                                            agentId: widget.agentId,
+                                            token: widget.token,
+                                            updateData: body,
+                                          );
+                                      if (resp.isSuccess) {
+                                        Navigator.of(context).pop();
+                                        _fetchAgentDetail(); // refresh data
+                                      } else {
+                                        ScaffoldMessenger.of(ctx).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              "Update failed: ${resp.message}",
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(ctx).showSnackBar(
+                                        SnackBar(content: Text("Error: $e")),
+                                      );
+                                    }
                                   },
                                   child: const Text("Save Changes"),
                                 ),
                               ),
-                              SizedBox(height: 10),
+                              const SizedBox(height: 10),
                               SizedBox(
-                                width:
-                                double.infinity, // take full available width
+                                width: double.infinity,
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors
-                                        .white, // 👈 button background color
-                                    foregroundColor: Colors.white,
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Colors.black,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                        12,
-                                      ), // 👈 border radius
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 10,
-                                    ), // taller button
+                                    ),
                                   ),
-                                  onPressed: () {
-                                    print("Name: ${nameController.text}");
-                                    print(
-                                      "Father Name: ${fatherNameController.text}",
-                                    );
-                                    print("Email: ${emailController.text}");
-                                    print("Mobile: ${mobileController.text}");
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: const Text("Cancel",style: TextStyle(color: Colors.black),),
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  child: const Text("Cancel"),
                                 ),
                               ),
                             ],
@@ -336,390 +286,288 @@ class _profilebodyState extends State<profilebody> {
     );
   }
 
+  // ================== UI HELPERS ==================
+  Widget _buildField(
+    String label,
+    TextEditingController ctrl, {
+    bool enabled = true,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label),
+        const SizedBox(height: 6.0),
+        TextField(
+          controller: ctrl,
+          enabled: enabled,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.green, width: 2.0),
+            ),
+            contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ================== PAGE ==================
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_errorMessage != null) {
+      return Scaffold(body: Center(child: Text(_errorMessage!)));
+    }
+
+    final d = _agentDetail!;
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Container(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => Agentdashboardmainpage(initialIndex: 0), // 👈 Withdraw tab
-                          ),
-                        );
-                      },
-                      child: Container(
-                        height: 45,
-                        width: 45,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (c) =>
+                              Agentdashboardmainpage(initialIndex: 0),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      height: 45,
+                      width: 45,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.black12, width: 1.0),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(5.0),
+                      ),
+                      child: Center(
+                        child: Image.asset(
+                          'lib/icons/back-arrow.png',
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 20.0),
+                  const Text(
+                    "My Profile",
+                    style: TextStyle(
+                      fontSize: 24.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 30.0),
+
+              // Card: Agent Info
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Agent Information",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 26.0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Text(
+                        "Your personal and professional information",
+                        style: TextStyle(color: Colors.green, fontSize: 16.0),
+                      ),
+                      const SizedBox(height: 20.0),
+
+                      // Box 1
+                      Container(
+                        height: 240,
+                        width: double.infinity,
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black12, width: 1.0),
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(
-                            5.0,
-                          ), // Uniform radius for all corners
+                          border: Border.all(color: Colors.grey, width: 1),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Container(
-                          height: 8,
-                          child: Image.asset(
-                            'lib/icons/back-arrow.png',
-                            color: Colors.black,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _infoRow(
+                                "# Agent ID",
+                                d['referalId']?.toString() ?? "",
+                                null,
+                              ),
+                              const Divider(thickness: 0.3, color: Colors.grey),
+                              _infoRow(
+                                "Name",
+                                d['name']?.toString() ?? "",
+                                'lib/icons/profile.png',
+                              ),
+                              const Divider(thickness: 0.3, color: Colors.grey),
+                              _infoRow(
+                                "Other's Name",
+                                d['otherName']?.toString() ?? "",
+                                'lib/icons/profile.png',
+                              ),
+                              const Divider(thickness: 0.3, color: Colors.grey),
+                              _infoRow(
+                                "Father's Name",
+                                d['fatherName']?.toString() ?? "",
+                                'lib/icons/profile.png',
+                              ),
+                              const Divider(thickness: 0.3, color: Colors.grey),
+                              _infoRow(
+                                "Mobile Number",
+                                d['contactNumber']?.toString() ?? "",
+                                'lib/icons/telephone.png',
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                    ),
-                    SizedBox(width: 20.0),
-                    Text(
-                      "My Profile",
-                      style: TextStyle(
-                        fontSize: 24.0,
-                        fontWeight: FontWeight.bold,
+
+                      const SizedBox(height: 20.0),
+
+                      // Box 2
+                      Container(
+                        height: 210,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(color: Colors.grey, width: 1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _infoRow(
+                                "Aadhar Number",
+                                d['aadharNo']?.toString() ?? "",
+                                'lib/icons/driving.png',
+                              ),
+                              const Divider(thickness: 0.3, color: Colors.grey),
+                              _infoRow(
+                                "PAN Card",
+                                d['panNo']?.toString() ?? "",
+                                'lib/icons/card.png',
+                              ),
+                              const Divider(thickness: 0.3, color: Colors.grey),
+                              _infoRow(
+                                "Account Number",
+                                d['accountNo']?.toString() ?? "",
+                                'lib/icons/rupee.png',
+                              ),
+                              const Divider(thickness: 0.3, color: Colors.grey),
+                              _infoRow(
+                                "IFSC Code",
+                                d['ifscCode']?.toString() ?? "",
+                                'lib/icons/rupee.png',
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 30.0),
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white, // background color
-                    border: Border.all(
-                      color: Colors.grey, // border color
-                      width: 1, // border thickness
-                    ),
-                    borderRadius: BorderRadius.circular(20), // 👈 circular border radius
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Agent Information",style: TextStyle(color: Colors.black,fontSize: 26.0,fontWeight: FontWeight.bold),),
-                        Text("Your personal and professional information",
-                          style: TextStyle(color: Colors.green,fontSize: 16.0),),
-                        SizedBox(height: 20.0),
-                          Container(
-                            height: 210,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: Colors.white, // background color
-                              border: Border.all(
-                                color: Colors.grey, // border color
-                                width: 1, // border thickness
-                              ),
-                              borderRadius: BorderRadius.circular(10), // 👈 circular border radius
+
+                      const SizedBox(height: 20.0),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.lightGreen,
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5),
                             ),
-                            child:
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Text("#",
-                                              style: TextStyle(color: Colors.green,fontSize: 14.0),),
-                                            SizedBox(width: 10.0),
-                                            Text("Agent ID",
-                                              style: TextStyle(color: Colors.green,fontSize: 14.0),),
-                                          ],
-                                        ),
-                                        Text("svd-st-01",
-                                          style: TextStyle(color: Colors.black,fontSize: 14.0,fontWeight: FontWeight.bold),),
-
-                                      ],
-                                    ),
-                                     SizedBox(height: 10.0),
-                                    Divider(
-                                      thickness: 0.3,
-                                      color: Colors.grey,
-                                    ),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Container(
-                                              height: 14,
-                                              child: Image.asset(
-                                                'lib/icons/profile.png',
-                                                color: Colors.green,
-                                              ),
-                                            ),
-                                            SizedBox(width: 10.0),
-                                            Text("Name",
-                                              style: TextStyle(color: Colors.green,fontSize: 14.0),),
-                                          ],
-                                        ),
-                                        Text("chinnala srikanth",
-                                          style: TextStyle(color: Colors.black,fontSize: 14.0,fontWeight: FontWeight.bold),),
-
-                                      ],
-                                    ),
-                                    SizedBox(height: 10.0),
-                                    Divider(
-                                      thickness: 0.3,
-                                      color: Colors.grey,
-                                    ),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Container(
-                                              height: 14,
-                                              child: Image.asset(
-                                                'lib/icons/profile.png',
-                                                color: Colors.green,
-                                              ),
-                                            ),
-                                            SizedBox(width: 10.0),
-                                            Text("Father's Name",
-                                              style: TextStyle(color: Colors.green,fontSize: 14.0),),
-                                          ],
-                                        ),
-                                        Text("chinnala kistaiah",
-                                          style: TextStyle(color: Colors.black,fontSize: 14.0,fontWeight: FontWeight.bold),),
-
-                                      ],
-                                    ),
-                                    SizedBox(height: 10.0),
-                                    Divider(
-                                      thickness: 0.3,
-                                      color: Colors.grey,
-                                    ),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Container(
-                                              height: 14,
-                                              child: Image.asset(
-                                                'lib/icons/telephone.png',
-                                                color: Colors.green,
-                                              ),
-                                            ),
-                                            SizedBox(width: 10.0),
-                                            Text("Mobile Number",
-                                              style: TextStyle(color: Colors.green,fontSize: 14.0),),
-                                          ],
-                                        ),
-                                        Text("960329998",
-                                          style: TextStyle(color: Colors.black,fontSize: 14.0,fontWeight: FontWeight.bold),),
-
-                                      ],
-                                    ),
-                                    SizedBox(height: 10.0),
-                                    Divider(
-                                      thickness: 0.3,
-                                      color: Colors.grey,
-                                    ),
-
-                                  ],
-
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                          onPressed: () => showUserFormDialog(context),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                height: 15.0,
+                                child: Image.asset(
+                                  "lib/icons/edit-button.png",
+                                  color: Colors.black,
                                 ),
                               ),
-
-                          ),
-                        SizedBox(height: 20.0),
-                        Container(
-                          height: 210,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.white, // background color
-                            border: Border.all(
-                              color: Colors.grey, // border color
-                              width: 1, // border thickness
-                            ),
-                            borderRadius: BorderRadius.circular(10), // 👈 circular border radius
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          height: 14,
-                                          child: Image.asset(
-                                            'lib/icons/driving.png',
-                                            color: Colors.green,
-                                          ),
-                                        ),
-                                        SizedBox(width: 10.0),
-                                        Text("Aadhar Number",
-                                          style: TextStyle(color: Colors.green,fontSize: 14.0),),
-                                      ],
-                                    ),
-                                    Text("456724548971",
-                                      style: TextStyle(color: Colors.black,fontSize: 14.0,fontWeight: FontWeight.bold),),
-
-                                  ],
+                              const SizedBox(width: 10.0),
+                              const Text(
+                                "Edit Profile",
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 15.0,
                                 ),
-                                SizedBox(height: 10.0),
-                                Divider(
-                                  thickness: 0.3,
-                                  color: Colors.grey,
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          height: 14,
-                                          child: Image.asset(
-                                            'lib/icons/card.png',
-                                            color: Colors.green,
-                                          ),
-                                        ),
-                                        SizedBox(width: 10.0),
-                                        Text("PAN Card",
-                                          style: TextStyle(color: Colors.green,fontSize: 14.0),),
-                                      ],
-                                    ),
-                                    Text("ASIPC8975E",
-                                      style: TextStyle(color: Colors.black,fontSize: 14.0,fontWeight: FontWeight.bold),),
-
-                                  ],
-                                ),
-                                SizedBox(height: 10.0),
-                                Divider(
-                                  thickness: 0.3,
-                                  color: Colors.grey,
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          height: 14,
-                                          child: Image.asset(
-                                            'lib/icons/rupee.png',
-                                            color: Colors.green,
-                                          ),
-                                        ),
-                                        SizedBox(width: 10.0),
-                                        Text("Account Number",
-                                          style: TextStyle(color: Colors.green,fontSize: 14.0),),
-                                      ],
-                                    ),
-                                    Text("99996457998734",
-                                      style: TextStyle(color: Colors.black,fontSize: 14.0,fontWeight: FontWeight.bold),),
-
-                                  ],
-                                ),
-                                SizedBox(height: 10.0),
-                                Divider(
-                                  thickness: 0.3,
-                                  color: Colors.grey,
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          height: 14,
-                                          child: Image.asset(
-                                            'lib/icons/rupee.png',
-                                            color: Colors.green,
-                                          ),
-                                        ),
-                                        SizedBox(width: 10.0),
-                                        Text("IFSC Code",
-                                          style: TextStyle(color: Colors.green,fontSize: 14.0),),
-                                      ],
-                                    ),
-                                    Text("HDFC0000518",
-                                      style: TextStyle(color: Colors.black,fontSize: 14.0,fontWeight: FontWeight.bold),),
-
-                                  ],
-                                ),
-                                SizedBox(height: 10.0),
-                                Divider(
-                                  thickness: 0.3,
-                                  color: Colors.grey,
-                                ),
-
-                              ],
-
-                            ),
-                          ),
-
-                        ),
-
-                        SizedBox(height: 20.0),
-                        SizedBox(
-                          width:
-                          double.infinity, // take full available width
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors
-                                  .lightGreen, // 👈 button background color
-                              foregroundColor: Colors.green,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  5,
-                                ), // 👈 border radius
                               ),
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 10,
-                              ), // taller button
-                            ),
-                            onPressed: () {
-
-                                showUserFormDialog(context);
-
-                            },
-                            child:  Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  height: 15.0,
-                                  child: Image.asset(
-                                    "lib/icons/edit-button.png",
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                SizedBox(width: 10.0),
-                                Text("Edit Profile",style: TextStyle(color: Colors.black,fontSize: 15.0),),
-                              ],
-                            ),
+                            ],
                           ),
                         ),
-
-                      ],
-
-                    ),
+                      ),
+                    ],
                   ),
-
                 ),
-
-
-
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _infoRow(String label, String value, String? iconPath) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            if (iconPath != null)
+              SizedBox(
+                height: 14,
+                child: Image.asset(iconPath, color: Colors.green),
+              ),
+            if (iconPath != null) const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.green, fontSize: 14.0),
+            ),
+          ],
+        ),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 14.0,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
